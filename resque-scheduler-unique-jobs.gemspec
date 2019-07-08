@@ -1,11 +1,11 @@
 
 lib = File.expand_path('lib', __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'resque/scheduler/unique/jobs/version'
+require 'resque_scheduler_unique_jobs/version'
 
 Gem::Specification.new do |spec|
   spec.name          = 'resque-scheduler-unique-jobs'
-  spec.version       = Resque::Scheduler::Unique::Jobs::VERSION
+  spec.version       = ResqueSchedulerUniqueJobs::VERSION
   spec.authors       = ['Olexandr Hoshylyk']
   spec.email         = ['gashuk95@gmail.com']
 
@@ -37,6 +37,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'resque', '~> 2.0.0'
+  spec.add_dependency 'resque-scheduler', '~> 4.0'
 
   spec.add_development_dependency 'bundler', '~> 2.0'
   spec.add_development_dependency 'rake', '~> 10.0'
