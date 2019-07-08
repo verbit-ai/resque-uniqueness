@@ -1,0 +1,6 @@
+Metrics/LineLength:
+  Max: 100
+  IgnoredPatterns: ['\#.*'] # ignore long comments
+
+Metrics/BlockLength:
+  Exclude: ['**/*.gemspec']
