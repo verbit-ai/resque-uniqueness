@@ -6,18 +6,26 @@ module Resque
     module SchedulerUniqueJob
       def self.included(base)
         base.extend ClassMethods
-
-        clear_redis
-      end
-
-      def self.clear_redis
-        Resque.redis.keys.grep(/#{ResqueSchedulerUniqueJobs::REDIS_KEY_PREFIX}/).each { |key| Resque.redis.del(key) }
       end
 
       # Class methods
       module ClassMethods
+        def before_enqueue_check_lock_availability(*args)
+          job_available_for_schedule?(args)
+        end
+
+        def before_schedule_check_lock_availability(*args)
+          job_available_for_schedule?(args)
+        end
+
         def lock
           @lock ||= :until_executing
+        end
+
+        private
+
+        def job_available_for_schedule?(args)
+          !Resque::Job.new(nil, class: self, args: args).locked_on_schedule?
         end
       end
     end

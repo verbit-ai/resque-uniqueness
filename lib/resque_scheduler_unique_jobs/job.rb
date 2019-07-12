@@ -3,67 +3,53 @@
 module ResqueSchedulerUniqueJobs
   # Container for ResqueSchedulerUniqueJobs Job representation
   class Job
+    extend Forwardable
+
+    LOCKS = {
+      while_executing: ResqueSchedulerUniqueJobs::Lock::WhileExecuting
+    }.freeze
+
+    def_delegators :@lock,
+                   :lock_execute,
+                   :lock_schedule,
+                   :unlock_execute,
+                   :unlock_schedule,
+                   :locked_on_execute?,
+                   :locked_on_schedule?,
+                   :should_lock_on_execute?,
+                   :should_lock_on_schedule?
+
     #### Class methods
 
-    def self.find_uniq_job_in_queue(queue)
-      payload = Resque.data_store.everything_in_queue(queue).find(&method(:item_uniq?))
+    def self.pop_unlocked_on_execute_from_queue(queue)
+      payload = Resque.data_store.everything_in_queue(queue).find(&method(:unlocked_on_execute?))
 
-      payload && Resque::Job.new(queue, Resque.decode(payload))
+      job = payload && Resque::Job.new(queue, Resque.decode(payload))
+      job&.remove_from_queue
+      job
     end
 
-    def self.item_uniq?(item)
-      new(Resque::Job.new(nil, Resque.decode(item))).uniq?
+    def self.unlocked_on_execute?(item)
+      !new(Resque::Job.new(nil, Resque.decode(item))).locked_on_execute?
     end
 
     #### Instance methods
 
     def initialize(job)
       @job = job
+      @lock = LOCKS[job.payload_class.lock].new(self)
     end
 
-    def uniq?
-      !executing_lock_enabled? || !already_executing?
-    end
+    private
+
+    attr_reader :job, :status
 
     def remove_from_queue
       job.redis.lrem(queue_key, 1, encoded_payload)
     end
 
-    def push_to_executing_pool
-      job.redis.incr(executing_redis_key)
-    end
-
-    def pop_from_executing_pool
-      job.redis.decr(executing_redis_key)
-    end
-
-    private
-
-    attr_reader :job
-
     def queue_key
       "queue:#{job.queue}"
-    end
-
-    def already_executing?
-      executing_pool_size.positive?
-    end
-
-    def executing_pool_size
-      Resque.redis.get(executing_redis_key).to_i
-    end
-
-    def executing_lock_enabled?
-      job.payload_class.included_modules.include?(::Resque::Plugins::SchedulerUniqueJob) &&
-        %i[while_executing until_and_while_executing].include?(job.payload_class.lock)
-    end
-
-    def processing_redis_key
-      @processing_redis_key ||= "processing:#{redis_key}"
-    end
-
-    def executing_redis_key
-      @executing_redis_key ||= "executing:#{redis_key}"
     end
 
     def redis_key
