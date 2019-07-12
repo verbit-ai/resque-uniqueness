@@ -16,5 +16,5 @@ module ResqueSchedulerUniqueJobs
   EXECUTING_REDIS_KEY_PREFIX = 'executing'
   SCHEDULED_REDIS_KEY_PREFIX = 'scheduled'
 
-  Lock.clear_executing
+  Lock::Base.clear_executing
 end

@@ -7,16 +7,11 @@ module ResqueSchedulerUniqueJobs
 
     # Base class for Lock instance
     class Base
-      extend Forwardable
-
-      SCHEDULED = 'scheduled'
-      EXECUTING = 'executing'
-
       def self.clear_executing
         cursor = '0'
         loop do
-          cursor, keys = redis.scan(cursor, match: "#{EXECUTING_REDIS_KEY_PREFIX}:#{REDIS_KEY_PREFIX}:*")
-          redis.del(*keys) if keys.any?
+          cursor, keys = Resque.redis.scan(cursor, match: "#{EXECUTING_REDIS_KEY_PREFIX}:#{REDIS_KEY_PREFIX}:*")
+          Resque.redis.del(*keys) if keys.any?
           break if cursor.to_i.zero?
         end
       end

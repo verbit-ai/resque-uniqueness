@@ -3,6 +3,8 @@
 module Resque
   # Override resque job class
   class Job
+    extend Forwardable
+
     def_delegators :uniq_wrapper,
                    :lock_execute,
                    :lock_schedule,

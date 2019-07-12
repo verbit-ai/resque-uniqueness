@@ -10,6 +10,10 @@ module Resque
 
       # Class methods
       module ClassMethods
+        def self.extended(base)
+          @klass = base
+        end
+
         def before_enqueue_check_lock_availability(*args)
           job_available_for_schedule?(args)
         end
@@ -25,7 +29,7 @@ module Resque
         private
 
         def job_available_for_schedule?(args)
-          !Resque::Job.new(nil, class: self, args: args).locked_on_schedule?
+          !Resque::Job.new(nil, 'class' => name, 'args' => args).locked_on_schedule?
         end
       end
     end

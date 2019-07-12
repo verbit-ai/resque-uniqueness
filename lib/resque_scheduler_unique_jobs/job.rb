@@ -9,6 +9,14 @@ module ResqueSchedulerUniqueJobs
       while_executing: ResqueSchedulerUniqueJobs::Lock::WhileExecuting
     }.freeze
 
+    attr_reader :job
+
+    def_delegators :@job,
+                   :redis,
+                   :payload,
+                   :queue,
+                   :payload_class
+
     def_delegators :@lock,
                    :lock_execute,
                    :lock_schedule,
@@ -37,27 +45,25 @@ module ResqueSchedulerUniqueJobs
 
     def initialize(job)
       @job = job
-      @lock = LOCKS[job.payload_class.lock].new(self)
-    end
-
-    private
-
-    attr_reader :job, :status
-
-    def remove_from_queue
-      job.redis.lrem(queue_key, 1, encoded_payload)
-    end
-
-    def queue_key
-      "queue:#{job.queue}"
+      @lock = LOCKS[payload_class.lock].new(self)
     end
 
     def redis_key
       @redis_key ||= "#{REDIS_KEY_PREFIX}:#{encoded_payload}"
     end
 
+    def remove_from_queue
+      redis.lrem(queue_key, 1, encoded_payload)
+    end
+
+    private
+
+    def queue_key
+      "queue:#{queue}"
+    end
+
     def encoded_payload
-      @encoded_payload ||= Resque.encode(job.payload)
+      @encoded_payload ||= Resque.encode(payload)
     end
   end
 end
