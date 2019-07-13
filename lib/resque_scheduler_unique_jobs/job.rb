@@ -6,7 +6,8 @@ module ResqueSchedulerUniqueJobs
     extend Forwardable
 
     LOCKS = {
-      while_executing: ResqueSchedulerUniqueJobs::Lock::WhileExecuting
+      until_executing: Lock::UntilExecuting,
+      while_executing: Lock::WhileExecuting
     }.freeze
 
     attr_reader :job

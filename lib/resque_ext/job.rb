@@ -18,7 +18,7 @@ module Resque
 
     class << self
       def create_with_uniq(queue, klass, *args)
-        return create_without_uniq if create_in_scheduler?
+        return create_without_uniq(queue, klass, *args) if klass.call_from_scheduler?
 
         job = new(queue, 'class' => klass, 'args' => decode(encode(args)))
 
@@ -43,12 +43,6 @@ module Resque
 
       alias reserve_without_uniq reserve
       alias reserve reserve_with_uniq
-
-      private
-
-      def create_in_scheduler?
-        !caller.grep(%r{lib\/resque\/scheduler\.rb.*enqueue}).empty?
-      end
     end
 
     def perform_with_uniq
