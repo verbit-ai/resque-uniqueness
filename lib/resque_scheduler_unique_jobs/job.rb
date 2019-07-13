@@ -7,7 +7,8 @@ module ResqueSchedulerUniqueJobs
 
     LOCKS = {
       until_executing: Lock::UntilExecuting,
-      while_executing: Lock::WhileExecuting
+      while_executing: Lock::WhileExecuting,
+      until_and_while_executing: Lock::UntilAndWhileExecuting
     }.freeze
 
     attr_reader :job

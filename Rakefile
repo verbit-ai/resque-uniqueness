@@ -6,6 +6,7 @@ require 'resque/scheduler/tasks'
 
 require_relative 'spec/fixtures/test_worker'
 require_relative 'spec/fixtures/until_executing_test_worker'
+require_relative 'spec/fixtures/until_and_while_executing_test_worker'
 
 RSpec::Core::RakeTask.new(:spec)
 

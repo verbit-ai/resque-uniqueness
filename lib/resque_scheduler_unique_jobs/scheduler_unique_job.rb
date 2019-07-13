@@ -31,11 +31,11 @@ module Resque
           !caller.grep(%r{lib\/resque\/scheduler\.rb.*enqueue}).empty?
         end
 
-        private
-
         def job_available_for_schedule?(args)
           !create_job(args).locked_on_schedule?
         end
+
+        private
 
         def create_job(args)
           Resque::Job.new(nil, 'class' => name, 'args' => args)
