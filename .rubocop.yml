@@ -1,3 +1,6 @@
+AllCops:
+  Exclude:
+    - 'bin/*'
 Metrics/LineLength:
   Max: 100
   IgnoredPatterns: ['\#.*'] # ignore long comments
