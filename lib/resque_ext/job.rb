@@ -43,6 +43,15 @@ module Resque
 
       alias reserve_without_uniq reserve
       alias reserve reserve_with_uniq
+
+      def destroy_with_uniq(queue, klass, *args)
+        res = destroy_without_uniq(queue, klass, *args)
+        ResqueSchedulerUniqueJobs::Job.destroy(queue, klass, *args)
+        res
+      end
+
+      alias destroy_without_uniq destroy
+      alias destroy destroy_with_uniq
     end
 
     def perform_with_uniq

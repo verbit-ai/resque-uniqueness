@@ -40,7 +40,31 @@ module ResqueSchedulerUniqueJobs
     end
 
     def self.unlocked_on_execute?(item)
-      !new(Resque::Job.new(nil, Resque.decode(item))).locked_on_execute?
+      !Resque::Job.new(nil, Resque.decode(item)).locked_on_execute?
+    end
+
+    def self.destroy(queue, klass, *args)
+      klass = klass.to_s
+      Resque.data_store.everything_in_queue(queue).each do |string|
+        json = Resque.decode(string)
+        next unless json['class'] == klass
+        next if args.any? && json['args'] != args
+
+        unlock_schedule(queue, json)
+      end
+    end
+
+    def self.remove_queue(queue)
+      Resque.data_store.everything_in_queue(queue).uniq.each do |string|
+        json = Resque.decode(string)
+
+        unlock_schedule(queue, json)
+      end
+    end
+
+    def self.unlock_schedule(queue, item)
+      job = Resque::Job.new(queue, item)
+      job.unlock_schedule if job.locked_on_schedule?
     end
 
     #### Instance methods
