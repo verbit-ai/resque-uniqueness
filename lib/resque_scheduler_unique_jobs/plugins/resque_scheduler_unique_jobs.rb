@@ -11,14 +11,16 @@ module Resque
       # Class methods
       module ClassMethods
         def before_enqueue_check_lock_availability(*args)
-          call_from_scheduler? || job_available_for_schedule?(args)
+          Resque.inline? || call_from_scheduler? || job_available_for_schedule?(args)
         end
 
         def before_schedule_check_lock_availability(*args)
-          job_available_for_schedule?(args)
+          Resque.inline? || job_available_for_schedule?(args)
         end
 
         def after_schedule_lock_schedule_if_needed(*args)
+          return true if Resque.inline?
+
           job = create_job(args)
           job.lock_schedule if job.should_lock_on_schedule?
         end

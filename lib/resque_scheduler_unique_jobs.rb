@@ -8,7 +8,7 @@ require 'resque_scheduler_unique_jobs/lock/while_executing'
 require 'resque_scheduler_unique_jobs/lock/until_executing'
 require 'resque_scheduler_unique_jobs/lock/until_and_while_executing'
 require 'resque_scheduler_unique_jobs/job'
-require 'resque_scheduler_unique_jobs/scheduler_unique_job'
+require 'resque_scheduler_unique_jobs/plugins/scheduler_unique_job'
 require 'resque_ext/job'
 
 # Base gem

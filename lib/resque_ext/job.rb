@@ -18,26 +18,32 @@ module Resque
 
     class << self
       def create_with_uniq(queue, klass, *args)
-        return create_without_uniq(queue, klass, *args) if klass.call_from_scheduler?
+        return create_without_uniq(queue, klass, *args) if Resque.inline? || klass.call_from_scheduler?
 
         job = new(queue, 'class' => klass, 'args' => decode(encode(args)))
 
         return if job.locked_on_schedule?
 
-        job.lock_schedule if job.should_lock_on_schedule?
-        create_without_uniq(queue, klass, *args)
+        Resque.redis.multi do
+          job.lock_schedule if job.should_lock_on_schedule?
+          create_without_uniq(queue, klass, *args)
+        end
       end
 
       alias create_without_uniq create
       alias create create_with_uniq
 
       def reserve_with_uniq(queue)
+        return reserve_without_uniq(queue) if Resque.inline?
+
         job = ResqueSchedulerUniqueJobs::Job.pop_unlocked_on_execute_from_queue(queue)
 
         return unless job
 
-        job.unlock_schedule if job.locked_on_schedule?
-        job.lock_execute if job.should_lock_on_execute?
+        Resque.redis.multi do
+          job.unlock_schedule if job.locked_on_schedule?
+          job.lock_execute if job.should_lock_on_execute?
+        end
         job
       end
 
@@ -45,8 +51,13 @@ module Resque
       alias reserve reserve_with_uniq
 
       def destroy_with_uniq(queue, klass, *args)
-        res = destroy_without_uniq(queue, klass, *args)
-        ResqueSchedulerUniqueJobs::Job.destroy(queue, klass, *args)
+        return destroy_without_uniq(queue, klass, *args) if Resque.inline?
+
+        res = false
+        Resque.redis.multi do
+          res = destroy_without_uniq(queue, klass, *args)
+          ResqueSchedulerUniqueJobs::Job.destroy(queue, klass, *args)
+        end
         res
       end
 
@@ -57,7 +68,7 @@ module Resque
     def perform_with_uniq
       perform_without_uniq
     ensure
-      unlock_execute if locked_on_execute?
+      unlock_execute if !Resque.inline? && locked_on_execute?
     end
 
     def uniq_wrapper
