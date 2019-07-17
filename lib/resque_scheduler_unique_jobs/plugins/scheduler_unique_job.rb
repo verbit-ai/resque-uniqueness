@@ -26,7 +26,12 @@ module Resque
         end
 
         def lock
-          @lock ||= :until_executing
+          @lock ||= ResqueSchedulerUniqueJobs.default_lock
+          unless ResqueSchedulerUniqueJobs::Job::LOCKS.key?(@lock)
+            raise NameError, "Unexpected lock. Available lock types: #{ResqueSchedulerUniqueJobs::Job::LOCKS.keys}, current lock type: #{@lock}"
+          end
+
+          @lock
         end
 
         def call_from_scheduler?

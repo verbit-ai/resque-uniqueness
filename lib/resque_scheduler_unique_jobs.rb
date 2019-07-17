@@ -17,5 +17,11 @@ module ResqueSchedulerUniqueJobs
   EXECUTING_REDIS_KEY_PREFIX = 'executing'
   SCHEDULED_REDIS_KEY_PREFIX = 'scheduled'
 
+  @default_lock = :until_executing
+
+  class << self
+    attr_accessor :default_lock
+  end
+
   Lock::Base.clear_executing
 end
