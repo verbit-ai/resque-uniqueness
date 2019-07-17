@@ -24,10 +24,8 @@ module Resque
 
         return if job.locked_on_schedule?
 
-        Resque.redis.multi do
-          job.lock_schedule if job.should_lock_on_schedule?
-          create_without_uniq(queue, klass, *args)
-        end
+        job.lock_schedule if job.should_lock_on_schedule?
+        create_without_uniq(queue, klass, *args)
       end
 
       alias create_without_uniq create
@@ -40,10 +38,8 @@ module Resque
 
         return unless job
 
-        Resque.redis.multi do
-          job.unlock_schedule if job.locked_on_schedule?
-          job.lock_execute if job.should_lock_on_execute?
-        end
+        job.unlock_schedule if job.locked_on_schedule?
+        job.lock_execute if job.should_lock_on_execute?
         job
       end
 

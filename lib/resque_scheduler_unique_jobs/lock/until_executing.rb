@@ -21,7 +21,7 @@ module ResqueSchedulerUniqueJobs
       def unlock_schedule
         raise UnlockingError, 'Job is not locked on schedule' unless locked_on_schedule?
 
-        redis.decr(redis_key)
+        redis.del(redis_key)
       end
 
       private

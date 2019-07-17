@@ -2,6 +2,8 @@
 
 require 'bundler/setup'
 require 'resque_scheduler_unique_jobs'
+require 'saharspec'
+require 'rspec/its'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

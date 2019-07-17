@@ -51,12 +51,16 @@ GEM
     rspec-expectations (3.8.4)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.8.0)
+    rspec-its (1.2.0)
+      rspec-core (>= 3.0.0)
+      rspec-expectations (>= 3.0.0)
     rspec-mocks (3.8.1)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.8.0)
     rspec-support (3.8.2)
     rufus-scheduler (3.6.0)
       fugit (~> 1.1, >= 1.1.6)
+    saharspec (0.0.5)
     sinatra (2.0.5)
       mustermann (~> 1.0)
       rack (~> 2.0)
@@ -77,6 +81,8 @@ DEPENDENCIES
   rake (~> 10.0)
   resque-scheduler-unique-jobs!
   rspec (~> 3.0)
+  rspec-its
+  saharspec (~> 0.0.5)
 
 BUNDLED WITH
-   2.0.1
+   2.0.2
