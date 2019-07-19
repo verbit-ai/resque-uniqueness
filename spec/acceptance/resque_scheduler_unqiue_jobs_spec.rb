@@ -1,9 +1,23 @@
 # frozen_string_literal: true
 
-require_relative '../fixtures/test_worker'
+require 'securerandom'
+require_relative '../fixtures/test_workers'
 
 RSpec.describe ResqueSchedulerUniqueJobs do
+  subject do
+    3.times { Resque.enqueue_in(2, worker_class, uniq_argument) }
+    3.times { Resque.enqueue(worker_class, uniq_argument) }
+    3.times { Resque.enqueue_to(:other_queue, worker_class, uniq_argument) }
+    workers_waiter
+    Resque.redis.get(TestWorker::REDIS_KEY)
+  end
+
   before { Resque.redis.del(TestWorker::REDIS_KEY) }
+
+  let(:uniq_argument) { SecureRandom.uuid }
+  let(:displayed_argument) { [uniq_argument].to_json }
+  let(:starting_worker_output) { "Starting processing #{worker_class} with args: #{displayed_argument}" }
+  let(:ending_worker_output) { "Ending processing #{worker_class} with args: #{displayed_argument}" }
 
   describe 'default_lock' do
     subject { described_class.default_lock }
@@ -14,19 +28,13 @@ RSpec.describe ResqueSchedulerUniqueJobs do
   end
 
   describe 'while_executing' do
-    subject do
-      5.times { Resque.enqueue(TestWorker, 1) }
-      resque_workers_waiter
-      Resque.redis.get(TestWorker::REDIS_KEY)
-    end
-
-    before { TestWorker.instance_variable_set(:@lock, :while_executing) }
+    let(:worker_class) { WhileExecutingWorker }
 
     let(:output_result) do
       str = ''
-      5.times do
-        str += 'Starting processing TestWorker with args: [1]'
-        str += 'Ending processing TestWorker with args: [1]'
+      9.times do
+        str += starting_worker_output
+        str += ending_worker_output
       end
       str
     end
@@ -35,25 +43,48 @@ RSpec.describe ResqueSchedulerUniqueJobs do
   end
 
   describe 'until_executing' do
-    subject do
-      5.times { Resque.enqueue_in(1, TestWorker, 1) }
-      resque_workers_waiter
-      Resque.redis.get(TestWorker::REDIS_KEY)
-    end
-
-    before { TestWorker.instance_variable_set(:@lock, :until_executing) }
+    let(:worker_class) { UntilExecutingWorker }
 
     let(:output_result) do
-      str = 'Starting processing TestWorker with args: [1]'
-      str += 'Ending processing TestWorker with args: [1]'
+      str = starting_worker_output
+      str += ending_worker_output
       str
     end
 
     it { is_expected.to eq output_result }
   end
 
-  def resque_workers_waiter
-    working_jobs = /(delayed:)|(queue:test_job)|(resque_scheduler_unique_jobs)/
+  describe 'until_and_while_executing' do
+    subject do
+      Resque.enqueue(worker_class, uniq_argument)
+      scheduled_workers_waiter
+      super()
+    end
+
+    let(:worker_class) { UntilAndWhileExecutingWorker }
+
+    let(:output_result) do
+      str = ''
+      # one from super subject and one from main subject
+      2.times do
+        str += starting_worker_output
+        str += ending_worker_output
+      end
+      str
+    end
+
+    it { is_expected.to eq output_result }
+  end
+
+  def workers_waiter
+    working_keys = %w[delayed: queue: test_worker_performing:]
+    working_jobs = /(#{working_keys.join(')|(')})/
     sleep 1 until Resque.redis.keys.grep(working_jobs).empty?
+  end
+
+  def scheduled_workers_waiter
+    scheduled_keys = %w[delayed: queue:]
+    scheduled_jobs = /(#{scheduled_keys.join(')|(')})/
+    sleep 1 until Resque.redis.keys.grep(scheduled_jobs).empty?
   end
 end
