@@ -18,7 +18,9 @@ module Resque
 
     class << self
       def create_with_uniq(queue, klass, *args)
-        return create_without_uniq(queue, klass, *args) if Resque.inline? || klass.call_from_scheduler?
+        if Resque.inline? || klass.call_from_scheduler?
+          return create_without_uniq(queue, klass, *args)
+        end
 
         job = new(queue, 'class' => klass, 'args' => decode(encode(args)))
 

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'securerandom'
-require_relative '../fixtures/test_workers'
 
 RSpec.describe ResqueSchedulerUniqueJobs do
   subject do

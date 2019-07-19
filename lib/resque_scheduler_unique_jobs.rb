@@ -11,7 +11,9 @@ require 'resque_scheduler_unique_jobs/job'
 require 'resque_scheduler_unique_jobs/plugins/scheduler_unique_job'
 require 'resque_ext/job'
 
-# Base gem
+Resque.redis = 'localhost:6379/resque_scheduler_unique_jobs_test' if ENV['REDIS_ENV'] == 'test'
+
+# Base gem module
 module ResqueSchedulerUniqueJobs
   REDIS_KEY_PREFIX = 'resque_scheduler_unique_jobs'
   EXECUTING_REDIS_KEY_PREFIX = 'executing'

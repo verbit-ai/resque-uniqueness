@@ -1,9 +1,13 @@
 # frozen_string_literal: true
 
 require 'bundler/setup'
-require 'resque_scheduler_unique_jobs'
 require 'saharspec'
 require 'rspec/its'
+
+ENV['REDIS_ENV'] = 'test'
+
+require 'resque_scheduler_unique_jobs'
+require_relative 'fixtures/test_workers'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

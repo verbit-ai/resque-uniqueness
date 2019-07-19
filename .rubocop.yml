@@ -1,3 +1,5 @@
+require: rubocop-rspec
+
 AllCops:
   Exclude:
     - 'bin/*'
@@ -6,4 +8,17 @@ Metrics/LineLength:
   IgnoredPatterns: ['\#.*'] # ignore long comments
 
 Metrics/BlockLength:
-  Exclude: ['**/*.gemspec']
+  Exclude: ['**/*_spec.rb']
+
+Metrics/BlockLength:
+  ExcludedMethods: ['describe']
+
+Layout/SpaceInsideHashLiteralBraces:
+  EnforcedStyle: no_space
+
+RSpec/EmptyExampleGroup:
+  CustomIncludeMethods:
+    - 'its_block'
+
+RSpec/ImplicitSubject:
+  Enabled: false
