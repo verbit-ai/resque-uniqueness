@@ -17,6 +17,9 @@ module Resque
                    :remove_from_queue
 
     class << self
+      # Call before Resque put job into queue
+      # We should to ignore locking when this method call from scheduler.
+      # More information read in the description of `lib.resque_ext/plugin/scheduler_unique_job.rb#call_from_scheduler?` method
       def create_with_uniq(queue, klass, *args)
         if Resque.inline? || klass.call_from_scheduler?
           return create_without_uniq(queue, klass, *args)
@@ -33,6 +36,9 @@ module Resque
       alias create_without_uniq create
       alias create create_with_uniq
 
+      # Resque call this method, when starting to process job
+      # We should to make sure that we starting to process only unlocked jobs.
+      # And also we should to be sure that we unlock_scheduling and lock executing here
       def reserve_with_uniq(queue)
         return reserve_without_uniq(queue) if Resque.inline?
 
@@ -48,6 +54,7 @@ module Resque
       alias reserve_without_uniq reserve
       alias reserve reserve_with_uniq
 
+      # Destroy with jobs their scheduled locks
       def destroy_with_uniq(queue, klass, *args)
         return destroy_without_uniq(queue, klass, *args) if Resque.inline?
 
@@ -63,6 +70,8 @@ module Resque
       alias destroy destroy_with_uniq
     end
 
+    # Main process method in resque
+    # On the end of this method we should to unlock executing
     def perform_with_uniq
       perform_without_uniq
     ensure
