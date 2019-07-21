@@ -5,7 +5,12 @@ AllCops:
     - 'bin/*'
 Metrics/LineLength:
   Max: 100
-  IgnoredPatterns: ['\#.*'] # ignore long comments
+  IgnoredPatterns:
+    - '\#.*' # ignore long comments
+      # specs ignoring
+    - 'its_block {.*'
+    - 'it {.*'
+    - 'subject {.*'
 
 Metrics/BlockLength:
   Exclude: ['**/*_spec.rb']

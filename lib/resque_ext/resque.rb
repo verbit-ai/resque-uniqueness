@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# Extension of main Resque module
 module Resque
   class << self
     def remove_queue_with_uniq(queue)
@@ -32,6 +33,7 @@ module Resque
 
     def remove_delayed_job_from_timestamp_with_uniq(timestamp, klass, *args)
       removed_count = remove_delayed_job_from_timestamp_without_uniq(timestamp, klass, *args)
+      # If removed_count > zero we should to unlock schedule for this job
       return removed_count if Resque.inline? || removed_count.zero?
 
       ResqueSchedulerUniqueJobs::Job.unlock_schedule(nil, 'class' => klass.to_s, 'args' => args)
