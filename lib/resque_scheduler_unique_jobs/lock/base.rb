@@ -6,7 +6,11 @@ module ResqueSchedulerUniqueJobs
     class UnlockingError < StandardError; end
 
     # Base class for Lock instance
+    # Uses for cases when plugin not included for certain job
+    # Just a stub
     class Base
+      # Remove all executing keys from redis.
+      # Using to fix unexpected terminated problem.
       def self.clear_executing
         cursor = '0'
         loop do

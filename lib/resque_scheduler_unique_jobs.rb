@@ -8,8 +8,9 @@ require 'resque_scheduler_unique_jobs/lock/while_executing'
 require 'resque_scheduler_unique_jobs/lock/until_executing'
 require 'resque_scheduler_unique_jobs/lock/until_and_while_executing'
 require 'resque_scheduler_unique_jobs/job'
-require 'resque_scheduler_unique_jobs/plugins/scheduler_unique_job'
+require 'resque_ext/plugins/scheduler_unique_job'
 require 'resque_ext/job'
+require 'resque_ext/resque'
 
 Resque.redis = 'localhost:6379/resque_scheduler_unique_jobs_test' if ENV['REDIS_ENV'] == 'test'
 

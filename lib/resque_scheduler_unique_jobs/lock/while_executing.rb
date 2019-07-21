@@ -2,7 +2,14 @@
 
 module ResqueSchedulerUniqueJobs
   module Lock
-    # While executing lock
+    # Create a lock when the job starting to processing with server.
+    # Removes lock after tje job will finish.
+    # All other same jobs will starts after the lock will be realised.
+    # Job will be executed one by one.
+    # Initialize example:
+    #   class TestWorker
+    #     @lock = :while_executing
+    #   end
     class WhileExecuting < Base
       def locked_on_execute?
         should_lock_on_execute? && already_executing?

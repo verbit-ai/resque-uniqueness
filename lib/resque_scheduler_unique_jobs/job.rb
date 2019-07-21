@@ -2,17 +2,19 @@
 
 module ResqueSchedulerUniqueJobs
   # Container for ResqueSchedulerUniqueJobs Job representation
-  # Implements three base locks:
+  # Implements four locks:
   #   until_executing - not allow to add into schedule or queue the same jobs with the same args
   #   while_executing - executes the same jobs with the same args one by one
   #   until_and_while_executing - mix of until_executing and while_executing lock types
+  #   base - uses for cases, when plugin not included. Just a stub
   class Job
     extend Forwardable
 
     LOCKS = {
       until_executing: Lock::UntilExecuting,
       while_executing: Lock::WhileExecuting,
-      until_and_while_executing: Lock::UntilAndWhileExecuting
+      until_and_while_executing: Lock::UntilAndWhileExecuting,
+      base: Lock::Base
     }.freeze
 
     attr_reader :job
@@ -82,7 +84,8 @@ module ResqueSchedulerUniqueJobs
 
     def initialize(job)
       @job = job
-      @lock = LOCKS[payload_class.lock].new(self)
+      lock_key = payload_class.respond_to?(:lock) ? payload_class.lock : :base
+      @lock = LOCKS[lock_key].new(self)
     end
 
     def redis_key
