@@ -69,11 +69,11 @@ module Resque
       unlock_execute if !Resque.inline? && locked_on_execute?
     end
 
+    alias perform_without_uniq perform
+    alias perform perform_with_uniq
+
     def uniq_wrapper
       @uniq_wrapper ||= ResqueSchedulerUniqueJobs::Job.new(self)
     end
-
-    alias perform_without_uniq perform
-    alias perform perform_with_uniq
   end
 end

@@ -79,7 +79,11 @@ RSpec.describe Resque::Plugins::SchedulerUniqueJob do
     end
 
     context 'when Resque inline' do
-      before { Resque.inline = true }
+      around do |example|
+        Resque.inline = true
+        example.run
+        Resque.inline = false
+      end
 
       its_block { is_expected.not_to send_message(lock_instance, :lock_schedule) }
     end

@@ -11,7 +11,7 @@ Metrics/BlockLength:
   Exclude: ['**/*_spec.rb']
 
 Metrics/BlockLength:
-  ExcludedMethods: ['describe']
+  ExcludedMethods: ['describe', 'shared_context']
 
 Layout/SpaceInsideHashLiteralBraces:
   EnforcedStyle: no_space
