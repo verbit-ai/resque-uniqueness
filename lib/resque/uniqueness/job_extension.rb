@@ -72,7 +72,7 @@ module Resque
       def perform
         super
       ensure
-        unlock_execute if !Resque.inline? && locked_on_execute?
+        unlock_execute if locked_on_execute?
       end
 
       def uniq_wrapper
