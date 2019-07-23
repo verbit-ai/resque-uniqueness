@@ -6,7 +6,7 @@ require 'rspec/its'
 
 ENV['REDIS_ENV'] = 'test'
 
-require 'resque_scheduler_unique_jobs'
+require 'resque/uniqueness'
 require_relative 'fixtures/test_workers'
 
 RSpec.configure do |config|

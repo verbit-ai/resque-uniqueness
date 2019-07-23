@@ -1,4 +1,4 @@
-# ResqueSchedulerUniqueJobs\
+# Resque::Uniqueness\
 
 <!-- MarkdownTOC -->
 
@@ -33,7 +33,7 @@ The goal of this gem is to ensure your Resque jobs are unique. We do this by cre
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'resque-scheduler-unique-jobs'
+gem 'resque-uniqueness'
 ```
 
 And then execute:
@@ -45,14 +45,14 @@ bundle
 Or install it yourself as:
 
 ```bash
-gem install resque-scheduler-unique-jobs
+gem install resque-uniqueness
 ```
 
 ## Global Configuration
 
 You can set a default lock for all workers with:
 ```ruby 
-ResqueSchedulerUniqueJobs.default_lock = :while_executing
+Resque::Uniqueness.default_lock = :while_executing
 ```
 By default all jobs have an `until_executing` lock type.
 
@@ -60,7 +60,7 @@ By default all jobs have an `until_executing` lock type.
 
 ```ruby
 class TestWorker
-  include Resque::Plugins::SchedulerUniqueJob
+  include Resque::Plugins::Uniqueness
   
   def self.perform(*args)
   end
@@ -124,7 +124,7 @@ And after it:
 1. Push to the branch (`git push origin my-new-feature`)
 1. Create new Pull Request
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/verbit/resque-scheduler-unique-jobs. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+Bug reports and pull requests are welcome on GitHub at https://github.com/verbit/resque-uniqueness. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
 
 ## License
 

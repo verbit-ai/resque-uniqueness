@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    resque-scheduler-unique-jobs (0.1.0)
+    resque-uniqueness (0.1.0)
       resque (~> 2.0.0)
       resque-scheduler (~> 4.0)
 
@@ -96,7 +96,7 @@ DEPENDENCIES
   bundler (~> 2.0)
   pry
   rake (~> 10.0)
-  resque-scheduler-unique-jobs!
+  resque-uniqueness!
   rspec (~> 3.0)
   rspec-its
   rubocop

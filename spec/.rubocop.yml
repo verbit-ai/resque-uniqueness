@@ -1,0 +1,20 @@
+inherit_from: ../.rubocop.yml
+
+RSpec/ImplicitSubject:
+  Enabled: false
+
+RSpec/EmptyExampleGroup:
+  CustomIncludeMethods:
+    - 'its_block'
+
+Metrics/BlockLength:
+  ExcludedMethods: ['describe', 'shared_context']
+
+Metrics/LineLength:
+  IgnoredPatterns:
+    - 'its_block {.*'
+    - 'it {.*'
+    - 'subject {.*'
+    - 'before {.*'
+    - 'let(.*'
+

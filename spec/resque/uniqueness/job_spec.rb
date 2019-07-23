@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require_relative '../shared_contexts/with_lock_spec'
+require_relative '../../shared_contexts/with_lock_spec'
 
-RSpec.describe ResqueSchedulerUniqueJobs::Job do
+RSpec.describe Resque::Uniqueness::Job do
   let(:queue) { :test_job }
   let(:queue_key) { "queue:#{queue}" }
 
@@ -10,7 +10,7 @@ RSpec.describe ResqueSchedulerUniqueJobs::Job do
     subject(:unlocked_job) { described_class.pop_unlocked_on_execute_from_queue(queue) }
 
     include_context 'with lock', :locked_on_execute
-    let(:lock_class) { ResqueSchedulerUniqueJobs::Lock::WhileExecuting }
+    let(:lock_class) { Resque::Uniqueness::Lock::WhileExecuting }
     let(:jobs) do
       [
         {class: WhileExecutingWorker, args: [:locked_on_execute]},
@@ -36,7 +36,7 @@ RSpec.describe ResqueSchedulerUniqueJobs::Job do
     subject { described_class.unlocked_on_execute?(encoded_job) }
 
     include_context 'with lock', :locked_on_execute
-    let(:lock_class) { ResqueSchedulerUniqueJobs::Lock::WhileExecuting }
+    let(:lock_class) { Resque::Uniqueness::Lock::WhileExecuting }
     let(:job) { {class: WhileExecutingWorker, args: job_args} }
     let(:encoded_job) { Resque.encode(job) }
 
@@ -57,7 +57,7 @@ RSpec.describe ResqueSchedulerUniqueJobs::Job do
     subject(:destroy_job) { described_class.destroy(queue, klass, *args) }
 
     include_context 'with lock', :locked_on_schedule, :unlock_schedule
-    let(:lock_class) { ResqueSchedulerUniqueJobs::Lock::UntilExecuting }
+    let(:lock_class) { Resque::Uniqueness::Lock::UntilExecuting }
     let(:klass) { UntilExecutingWorker }
     let(:args) { [] }
     let(:jobs) { [job] }
@@ -115,7 +115,7 @@ RSpec.describe ResqueSchedulerUniqueJobs::Job do
     subject { described_class.remove_queue(queue) }
 
     include_context 'with lock', :locked_on_schedule, :unlock_schedule
-    let(:lock_class) { ResqueSchedulerUniqueJobs::Lock::UntilExecuting }
+    let(:lock_class) { Resque::Uniqueness::Lock::UntilExecuting }
     let(:jobs) {}
     let(:encoded_jobs) { jobs.map(&Resque.method(:encode)) }
 

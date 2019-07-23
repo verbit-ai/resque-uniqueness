@@ -7,23 +7,9 @@ Metrics/LineLength:
   Max: 100
   IgnoredPatterns:
     - '\#.*' # ignore long comments
-      # specs ignoring
-    - 'its_block {.*'
-    - 'it {.*'
-    - 'subject {.*'
 
 Metrics/BlockLength:
   Exclude: ['**/*_spec.rb']
 
-Metrics/BlockLength:
-  ExcludedMethods: ['describe', 'shared_context']
-
 Layout/SpaceInsideHashLiteralBraces:
   EnforcedStyle: no_space
-
-RSpec/EmptyExampleGroup:
-  CustomIncludeMethods:
-    - 'its_block'
-
-RSpec/ImplicitSubject:
-  Enabled: false

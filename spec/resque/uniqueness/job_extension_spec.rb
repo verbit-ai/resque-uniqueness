@@ -1,23 +1,22 @@
 # frozen_string_literal: true
 
-require_relative '../shared_contexts/with_lock_spec'
+require_relative '../../shared_contexts/with_lock_spec'
 
-# Testing only gem extension to the Resque::Job class
-# That's why here I use bad pattern "stubject" - don't repeat it at home :) (Not extension specs)
-# I think for this case is a justified
-RSpec.describe Resque::Job do
-  describe '.create_with_uniq' do
-    subject { described_class.create_with_uniq(queue, klass, *args) }
+# We already prepended this module in `lib/resque/uniqueness.rb`
+# Therefore we will test Resque::Job class
+RSpec.describe Resque::Uniqueness::JobExtension do
+  describe '.create' do
+    subject { Resque::Job.create(queue, klass, *args) }
 
     include_context 'with lock', :locked_on_schedule, :should_lock_on_schedule, :lock_schedule
-    let(:lock_class) { ResqueSchedulerUniqueJobs::Lock::UntilAndWhileExecuting }
+    let(:lock_class) { Resque::Uniqueness::Lock::UntilAndWhileExecuting }
     let(:queue) { :test_queue }
     let(:klass) { UntilAndWhileExecutingWorker }
     let(:args) { ['should_lock_on_schedule'] }
 
-    before { allow(described_class).to receive(:create_without_uniq) }
+    before { allow(Resque).to receive(:push) }
 
-    its_block { is_expected.to send_message(described_class, :create_without_uniq) }
+    its_block { is_expected.to send_message(Resque, :push).with(queue, class: klass.to_s, args: args) }
     its_block { is_expected.to send_message(lock_instance, :lock_schedule) }
 
     context 'when resque inline' do
@@ -27,51 +26,51 @@ RSpec.describe Resque::Job do
         Resque.inline = false
       end
 
-      its_block { is_expected.to send_message(described_class, :create_without_uniq) }
+      before { allow(Resque::Job).to receive(:new).and_return(job_instance) }
+
+      let(:job_instance) { instance_double(Resque::Job, perform: nil) }
+
+      its_block { is_expected.to send_message(job_instance, :perform) }
       its_block { is_expected.not_to send_message(lock_instance, :lock_schedule) }
     end
 
     context 'when called from scheduler' do
       before { allow(klass).to receive(:call_from_scheduler?).and_return(true) }
 
-      its_block { is_expected.to send_message(described_class, :create_without_uniq) }
+      its_block { is_expected.to send_message(Resque, :push).with(queue, class: klass.to_s, args: args) }
       its_block { is_expected.not_to send_message(lock_instance, :lock_schedule) }
     end
 
     context 'when locked_on_schedule' do
       let(:args) { super().push('locked_on_schedule') }
 
-      its_block { is_expected.not_to send_message(described_class, :create_without_uniq) }
+      its_block { is_expected.not_to send_message(Resque, :push).with(queue, class: klass.to_s, args: args) }
       its_block { is_expected.not_to send_message(lock_instance, :lock_schedule) }
     end
 
     context 'when job shouldn\'t lock on schedule' do
       let(:args) { [] }
 
-      its_block { is_expected.to send_message(described_class, :create_without_uniq) }
+      its_block { is_expected.to send_message(Resque, :push).with(queue, class: klass.to_s, args: args) }
       its_block { is_expected.not_to send_message(lock_instance, :lock_schedule) }
     end
   end
 
-  describe '.reserve_with_uniq' do
-    subject { described_class.reserve_with_uniq(queue) }
+  describe '.reserve' do
+    subject { Resque::Job.reserve(queue) }
 
     include_context 'with lock',
                     :locked_on_schedule,
                     :unlock_schedule,
                     :should_lock_on_execute,
                     :lock_execute
-    let(:lock_class) { ResqueSchedulerUniqueJobs::Lock::UntilAndWhileExecuting }
+    let(:lock_class) { Resque::Uniqueness::Lock::UntilAndWhileExecuting }
     let(:queue) { :test_queue }
-    let(:job) do
-      described_class.new(queue, 'class' => UntilAndWhileExecutingWorker, 'args' => args)
-    end
+    let(:job) { Resque::Job.new(queue, job_payload) }
+    let(:job_payload) { {'class' => UntilAndWhileExecutingWorker, 'args' => args} }
     let(:args) { %w[locked_on_schedule should_lock_on_execute] }
 
-    before do
-      allow(ResqueSchedulerUniqueJobs::Job).to receive(:pop_unlocked_on_execute_from_queue)
-        .and_return(job)
-    end
+    before { allow(Resque::Uniqueness::Job).to receive(:pop_unlocked_on_execute_from_queue).and_return(job) }
 
     its_block { is_expected.to send_message(lock_instance, :unlock_schedule) }
     its_block { is_expected.to send_message(lock_instance, :lock_execute) }
@@ -84,7 +83,7 @@ RSpec.describe Resque::Job do
         Resque.inline = false
       end
 
-      before { allow(described_class).to receive(:reserve_without_uniq).and_return(job) }
+      before { allow(Resque).to receive(:pop).and_return(job_payload) }
 
       its_block { is_expected.not_to send_message(lock_instance, :unlock_schedule) }
       its_block { is_expected.not_to send_message(lock_instance, :lock_execute) }
@@ -108,21 +107,22 @@ RSpec.describe Resque::Job do
     end
   end
 
-  describe '.destroy_with_uniq' do
-    subject { described_class.destroy_with_uniq(queue, klass, *args) }
+  describe '.destroy' do
+    subject { Resque::Job.destroy(queue, klass, *args) }
 
     let(:queue) { :test_queue }
     let(:klass) { UntilExecutingWorker }
-    let(:args) { [] }
+    let(:args) { ['sample'] }
+    let(:data_store_instance) { instance_double(Resque::DataStore, remove_from_queue: 2) }
 
     before do
-      allow(described_class).to receive(:destroy_without_uniq).and_return(:response)
-      allow(ResqueSchedulerUniqueJobs::Job).to receive(:destroy)
+      allow(Resque::Job).to receive(:data_store).and_return(data_store_instance)
+      allow(Resque::Uniqueness::Job).to receive(:destroy)
     end
 
-    its_block { is_expected.to send_message(described_class, :destroy_without_uniq) }
-    its_block { is_expected.to send_message(ResqueSchedulerUniqueJobs::Job, :destroy) }
-    it { is_expected.to eq :response }
+    its_block { is_expected.to send_message(data_store_instance, :remove_from_queue).returning(2) }
+    its_block { is_expected.to send_message(Resque::Uniqueness::Job, :destroy) }
+    it { is_expected.to eq 2 }
 
     context 'when resque inline' do
       around do |example|
@@ -131,27 +131,25 @@ RSpec.describe Resque::Job do
         Resque.inline = false
       end
 
-      its_block { is_expected.to send_message(described_class, :destroy_without_uniq) }
-      its_block { is_expected.not_to send_message(ResqueSchedulerUniqueJobs::Job, :destroy) }
-      it { is_expected.to eq :response }
+      its_block { is_expected.to send_message(data_store_instance, :remove_from_queue).returning(2) }
+      its_block { is_expected.not_to send_message(Resque::Uniqueness::Job, :destroy) }
+      it { is_expected.to eq 2 }
     end
   end
 
   describe '#perform_with_uniq' do
-    subject { job.perform_with_uniq }
+    subject { job.perform }
 
     include_context 'with lock', :locked_on_execute, :unlock_execute
-    let(:lock_class) { ResqueSchedulerUniqueJobs::Lock::WhileExecuting }
-    let(:job) do
-      described_class.new(:test_queue, 'class' => WhileExecutingWorker, 'args' => args)
-    end
+    let(:lock_class) { Resque::Uniqueness::Lock::WhileExecuting }
+    let(:job) { Resque::Job.new(:test_queue, 'class' => WhileExecutingWorker, 'args' => args) }
     let(:args) { ['locked_on_execute'] }
 
-    before { allow(job).to receive(:perform_without_uniq).and_return(:response) }
+    before { allow(lock_class).to receive(:perform) }
 
-    its_block { is_expected.to send_message(job, :perform_without_uniq) }
+    its_block { is_expected.to send_message(WhileExecutingWorker, :perform) }
     its_block { is_expected.to send_message(lock_instance, :unlock_execute) }
-    it { is_expected.to eq :response }
+    it { is_expected.to be true }
 
     context 'when resque inline' do
       around do |example|
@@ -160,17 +158,17 @@ RSpec.describe Resque::Job do
         Resque.inline = false
       end
 
-      its_block { is_expected.to send_message(job, :perform_without_uniq) }
+      its_block { is_expected.to send_message(WhileExecutingWorker, :perform) }
       its_block { is_expected.not_to send_message(lock_instance, :unlock_execute) }
-      it { is_expected.to eq :response }
+      it { is_expected.to be true }
     end
 
     context 'when job not locked on execute' do
       let(:args) { [] }
 
-      its_block { is_expected.to send_message(job, :perform_without_uniq) }
+      its_block { is_expected.to send_message(WhileExecutingWorker, :perform) }
       its_block { is_expected.not_to send_message(lock_instance, :unlock_execute) }
-      it { is_expected.to eq :response }
+      it { is_expected.to eq true }
     end
   end
 end

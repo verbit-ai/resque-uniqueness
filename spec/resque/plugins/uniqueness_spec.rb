@@ -2,14 +2,14 @@
 
 require_relative '../../shared_contexts/with_lock_spec'
 
-RSpec.describe Resque::Plugins::SchedulerUniqueJob do
-  let(:instance) { TestWorker }
+RSpec.describe Resque::Plugins::Uniqueness do
+  let(:instance) { UntilExecutingWorker }
 
   describe '.before_enqueue_check_lock_availability' do
     subject { instance.before_enqueue_check_lock_availability(*args) }
 
     include_context 'with lock', :locked_on_schedule
-    let(:lock_class) { ResqueSchedulerUniqueJobs::Lock::UntilExecuting }
+    let(:lock_class) { Resque::Uniqueness::Lock::UntilExecuting }
     let(:args) { ['locked_on_schedule'] }
 
     it { is_expected.to be false }
@@ -25,7 +25,7 @@ RSpec.describe Resque::Plugins::SchedulerUniqueJob do
     end
 
     context 'when call from scheduler' do
-      before { allow(TestWorker).to receive(:caller).and_return(['lib/resque/scheduler.rb:248 #enqueue']) }
+      before { allow(UntilExecutingWorker).to receive(:caller).and_return(['lib/resque/scheduler.rb:248 #enqueue']) }
 
       it { is_expected.to be true }
     end
@@ -41,7 +41,7 @@ RSpec.describe Resque::Plugins::SchedulerUniqueJob do
     subject { instance.before_schedule_check_lock_availability(*args) }
 
     include_context 'with lock', :locked_on_schedule
-    let(:lock_class) { ResqueSchedulerUniqueJobs::Lock::UntilExecuting }
+    let(:lock_class) { Resque::Uniqueness::Lock::UntilExecuting }
     let(:args) { ['locked_on_schedule'] }
 
     it { is_expected.to be false }
@@ -67,7 +67,7 @@ RSpec.describe Resque::Plugins::SchedulerUniqueJob do
     subject { instance.after_schedule_lock_schedule_if_needed(*args) }
 
     include_context 'with lock', :should_lock_on_schedule, :lock_schedule
-    let(:lock_class) { ResqueSchedulerUniqueJobs::Lock::UntilExecuting }
+    let(:lock_class) { Resque::Uniqueness::Lock::UntilExecuting }
     let(:args) { ['should_lock_on_schedule'] }
 
     its_block { is_expected.to send_message(lock_instance, :lock_schedule) }
@@ -92,33 +92,37 @@ RSpec.describe Resque::Plugins::SchedulerUniqueJob do
   describe '.lock' do
     subject { instance.lock }
 
-    before do
-      stub_const('ResqueSchedulerUniqueJobs::Job::LOCKS', until_executing: UntilExecutingWorker)
-    end
+    before { stub_const('Resque::Uniqueness::Job::LOCKS', until_and_while_executing: UntilAndWhileExecutingWorker, until_executing: UntilExecutingWorker) }
 
     context 'when @lock already set' do
       around do |example|
-        instance.instance_variable_set(:@lock, :until_executing)
+        instance.instance_variable_set(:@lock, :until_and_while_executing)
         example.run
-        instance.instance_variable_set(:@lock, nil)
+        instance.instance_variable_set(:@lock, :until_executing)
       end
 
-      it { is_expected.to eq :until_executing }
+      it { is_expected.to eq :until_and_while_executing }
     end
 
     context 'when lock is missing' do
-      before do
-        allow(ResqueSchedulerUniqueJobs).to receive(:default_lock).and_return(:until_executing)
+      around do |example|
+        instance.instance_variable_set(:@lock, nil)
+        example.run
+        instance.instance_variable_set(:@lock, :until_executing)
       end
 
-      it { is_expected.to eq :until_executing }
+      before do
+        allow(Resque::Uniqueness).to receive(:default_lock).and_return(:until_and_while_executing)
+      end
+
+      it { is_expected.to eq :until_and_while_executing }
     end
 
     context 'when lock is not valid' do
       around do |example|
         instance.instance_variable_set(:@lock, :not_valid_lock)
         example.run
-        instance.instance_variable_set(:@lock, nil)
+        instance.instance_variable_set(:@lock, :until_executing)
       end
 
       its_block { is_expected.to raise_error(NameError, /Unexpected lock\./) }

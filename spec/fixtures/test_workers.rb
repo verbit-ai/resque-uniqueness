@@ -3,7 +3,7 @@
 require 'securerandom'
 # Simple test worker
 class TestWorker
-  include Resque::Plugins::SchedulerUniqueJob
+  include Resque::Plugins::Uniqueness
 
   REDIS_KEY = 'specs_output'
 

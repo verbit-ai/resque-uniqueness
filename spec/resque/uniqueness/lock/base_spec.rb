@@ -1,17 +1,17 @@
 # frozen_string_literal: true
 
-RSpec.describe ResqueSchedulerUniqueJobs::Lock::Base do
+RSpec.describe Resque::Uniqueness::Lock::Base do
   describe '.clear_executing' do
     subject(:call) { described_class.clear_executing }
 
     before do
-      stub_const('ResqueSchedulerUniqueJobs::EXECUTING_REDIS_KEY_PREFIX', 'executing')
-      stub_const('ResqueSchedulerUniqueJobs::REDIS_KEY_PREFIX', 'redis_key_prefix')
+      stub_const('Resque::Uniqueness::EXECUTING_REDIS_KEY_PREFIX', 'executing')
+      stub_const('Resque::Uniqueness::REDIS_KEY_PREFIX', 'redis_key_prefix')
 
       5.times { Resque.redis.incr("#{key_prefix}#{SecureRandom.uuid}") }
     end
 
-    let(:key_prefix) { "#{ResqueSchedulerUniqueJobs::EXECUTING_REDIS_KEY_PREFIX}:#{ResqueSchedulerUniqueJobs::REDIS_KEY_PREFIX}:" }
+    let(:key_prefix) { "#{Resque::Uniqueness::EXECUTING_REDIS_KEY_PREFIX}:#{Resque::Uniqueness::REDIS_KEY_PREFIX}:" }
 
     it 'not include any executing keys' do
       call
@@ -27,7 +27,7 @@ RSpec.describe ResqueSchedulerUniqueJobs::Lock::Base do
     context 'when klass include plugin' do
       let(:klass) do
         class IncludedPlugin
-          include ::Resque::Plugins::SchedulerUniqueJob
+          include ::Resque::Plugins::Uniqueness
         end
         IncludedPlugin
       end

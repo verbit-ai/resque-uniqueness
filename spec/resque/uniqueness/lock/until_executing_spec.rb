@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-RSpec.describe ResqueSchedulerUniqueJobs::Lock::WhileExecuting do
-  let(:klass_with_plugin) { WhileExecutingWorker }
+RSpec.describe Resque::Uniqueness::Lock::UntilExecuting do
+  let(:klass_with_plugin) { UntilExecutingWorker }
   let(:klass_without_plugin) do
     class NotIncludedPlugin
-      @lock = :while_executing
+      @lock = :until_executing
     end
     NotIncludedPlugin
   end
@@ -13,10 +13,10 @@ RSpec.describe ResqueSchedulerUniqueJobs::Lock::WhileExecuting do
   let(:redis_key) { lock_instance.send(:redis_key) }
   let(:klass) { klass_with_plugin }
 
-  describe '#locked_on_execute?' do
-    subject { lock_instance.locked_on_execute? }
+  describe '#locked_on_schedule?' do
+    subject { lock_instance.locked_on_schedule? }
 
-    context 'when plugin activated and already executing' do
+    context 'when plugin activated and already scheduled' do
       let(:klass) { klass_with_plugin }
 
       around do |example|
@@ -28,19 +28,19 @@ RSpec.describe ResqueSchedulerUniqueJobs::Lock::WhileExecuting do
       it { is_expected.to be true }
     end
 
-    context 'when plugin activated and not executing' do
+    context 'when plugin activated and not scheduled' do
       let(:klass) { klass_with_plugin }
 
       it { is_expected.to be false }
     end
 
-    context 'when plugin not activated and not executing' do
+    context 'when plugin not activated and not scheduled' do
       let(:klass) { klass_without_plugin }
 
       it { is_expected.to be false }
     end
 
-    context 'when plugin not activated and already executing' do
+    context 'when plugin not activated and already scheduled' do
       let(:klass) { klass_without_plugin }
 
       around do |example|
@@ -53,8 +53,8 @@ RSpec.describe ResqueSchedulerUniqueJobs::Lock::WhileExecuting do
     end
   end
 
-  describe '#should_lock_on_execute?' do
-    subject { lock_instance.should_lock_on_execute? }
+  describe '#should_lock_on_schedule?' do
+    subject { lock_instance.should_lock_on_schedule? }
 
     context 'when plugin activated' do
       let(:klass) { klass_with_plugin }
@@ -69,8 +69,8 @@ RSpec.describe ResqueSchedulerUniqueJobs::Lock::WhileExecuting do
     end
   end
 
-  describe '#lock_execute' do
-    subject(:call) { lock_instance.lock_execute }
+  describe '#lock_schedule' do
+    subject(:call) { lock_instance.lock_schedule }
 
     it 'increment data in redis' do
       call
@@ -85,16 +85,16 @@ RSpec.describe ResqueSchedulerUniqueJobs::Lock::WhileExecuting do
       end
 
       its_block do
-        is_expected.to raise_error(ResqueSchedulerUniqueJobs::Lock::LockingError, /already locked/)
+        is_expected.to raise_error(Resque::Uniqueness::Lock::LockingError, /already locked/)
       end
     end
   end
 
-  describe '#unlock_execute' do
-    subject(:call) { lock_instance.unlock_execute }
+  describe '#unlock_schedule' do
+    subject(:call) { lock_instance.unlock_schedule }
 
     its_block do
-      is_expected.to raise_error(ResqueSchedulerUniqueJobs::Lock::UnlockingError, /is not locked/)
+      is_expected.to raise_error(Resque::Uniqueness::Lock::UnlockingError, /is not locked/)
     end
 
     context 'when locked' do

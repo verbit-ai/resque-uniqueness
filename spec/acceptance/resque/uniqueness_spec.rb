@@ -2,7 +2,7 @@
 
 require 'securerandom'
 
-RSpec.describe ResqueSchedulerUniqueJobs do
+RSpec.describe Resque::Uniqueness do
   subject do
     3.times { Resque.enqueue_in(2, worker_class, uniq_argument) }
     3.times { Resque.enqueue(worker_class, uniq_argument) }
@@ -21,7 +21,11 @@ RSpec.describe ResqueSchedulerUniqueJobs do
   describe 'default_lock' do
     subject { described_class.default_lock }
 
-    before { described_class.instance_variable_set(:@default_lock, :while_executing) }
+    around do |example|
+      described_class.instance_variable_set(:@default_lock, :while_executing)
+      example.run
+      described_class.instance_variable_set(:@default_lock, :until_executing)
+    end
 
     it { is_expected.to eq :while_executing }
   end

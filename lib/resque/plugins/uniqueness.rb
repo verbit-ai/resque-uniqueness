@@ -3,7 +3,7 @@
 module Resque
   module Plugins
     # Resque plugin for enable unique jobs logic
-    module SchedulerUniqueJob
+    module Uniqueness
       def self.included(base)
         base.extend ClassMethods
       end
@@ -30,9 +30,9 @@ module Resque
 
         # Simply returns lock type of current job. If instance_variable `@lock` is not set, set it to default value
         def lock
-          @lock ||= ResqueSchedulerUniqueJobs.default_lock
-          unless ResqueSchedulerUniqueJobs::Job::LOCKS.key?(@lock)
-            raise NameError, "Unexpected lock. Available lock types: #{ResqueSchedulerUniqueJobs::Job::LOCKS.keys}, current lock type: #{@lock}"
+          @lock ||= Resque::Uniqueness.default_lock
+          unless Resque::Uniqueness::Job::LOCKS.key?(@lock)
+            raise NameError, "Unexpected lock. Available lock types: #{Resque::Uniqueness::Job::LOCKS.keys}, current lock type: #{@lock}"
           end
 
           @lock
