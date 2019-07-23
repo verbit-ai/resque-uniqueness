@@ -137,7 +137,7 @@ RSpec.describe Resque::Uniqueness::JobExtension do
     end
   end
 
-  describe '#perform_with_uniq' do
+  describe '#perform' do
     subject { job.perform }
 
     include_context 'with lock', :locked_on_execute, :unlock_execute
@@ -150,18 +150,6 @@ RSpec.describe Resque::Uniqueness::JobExtension do
     its_block { is_expected.to send_message(WhileExecutingWorker, :perform) }
     its_block { is_expected.to send_message(lock_instance, :unlock_execute) }
     it { is_expected.to be true }
-
-    context 'when resque inline' do
-      around do |example|
-        Resque.inline = true
-        example.run
-        Resque.inline = false
-      end
-
-      its_block { is_expected.to send_message(WhileExecutingWorker, :perform) }
-      its_block { is_expected.not_to send_message(lock_instance, :unlock_execute) }
-      it { is_expected.to be true }
-    end
 
     context 'when job not locked on execute' do
       let(:args) { [] }
