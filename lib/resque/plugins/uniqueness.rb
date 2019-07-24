@@ -2,7 +2,13 @@
 
 module Resque
   module Plugins
-    # Resque plugin for enable unique jobs logic
+    # Resque plugin to make job uniq. Usage:
+    #
+    #   class YourJobClass
+    #     include Resque::Plugins::Uniqueness
+    #     # optional:
+    #     @lock = .....
+    # See README for details on settings and lock types.
     module Uniqueness
       def self.included(base)
         base.extend ClassMethods
