@@ -53,7 +53,7 @@ module Resque
         # We can't schedule two same jobs with `until_executing` lock.
         # That's why we sure, that all jobs, which comes from scheduler, should be processed.
         def call_from_scheduler?
-          caller.grep(%r{lib\/resque\/scheduler\.rb.*enqueue}).any?
+          caller.grep(%r{lib/resque/scheduler\.rb.*enqueue}).any?
         end
 
         private
