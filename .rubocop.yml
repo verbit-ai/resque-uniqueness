@@ -9,7 +9,7 @@ Metrics/LineLength:
     - '\#.*' # ignore long comments
 
 Metrics/BlockLength:
-  Exclude: ['**/*_spec.rb']
+  Exclude: ['*.gemspec']
 
 Layout/SpaceInsideHashLiteralBraces:
   EnforcedStyle: no_space

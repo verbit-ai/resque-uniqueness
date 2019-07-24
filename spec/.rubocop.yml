@@ -8,13 +8,7 @@ RSpec/EmptyExampleGroup:
     - 'its_block'
 
 Metrics/BlockLength:
-  ExcludedMethods: ['describe', 'shared_context']
+  Enabled: false
 
 Metrics/LineLength:
-  IgnoredPatterns:
-    - 'its_block {.*'
-    - 'it {.*'
-    - 'subject {.*'
-    - 'before {.*'
-    - 'let(.*'
-
+  Enabled: false
