@@ -89,43 +89,43 @@ RSpec.describe Resque::Plugins::Uniqueness do
     end
   end
 
-  describe '.lock' do
-    subject { instance.lock }
+  describe '.lock_type' do
+    subject { instance.lock_type }
 
     before { stub_const('Resque::Uniqueness::Job::LOCKS', until_and_while_executing: UntilAndWhileExecutingWorker, until_executing: UntilExecutingWorker) }
 
-    context 'when @lock already set' do
+    context 'when @lock_type already set' do
       around do |example|
-        instance.instance_variable_set(:@lock, :until_and_while_executing)
+        instance.instance_variable_set(:@lock_type, :until_and_while_executing)
         example.run
-        instance.instance_variable_set(:@lock, :until_executing)
+        instance.instance_variable_set(:@lock_type, :until_executing)
       end
 
       it { is_expected.to eq :until_and_while_executing }
     end
 
-    context 'when lock is missing' do
+    context 'when lock_type is missing' do
       around do |example|
-        instance.instance_variable_set(:@lock, nil)
+        instance.instance_variable_set(:@lock_type, nil)
         example.run
-        instance.instance_variable_set(:@lock, :until_executing)
+        instance.instance_variable_set(:@lock_type, :until_executing)
       end
 
       before do
-        allow(Resque::Uniqueness).to receive(:default_lock).and_return(:until_and_while_executing)
+        allow(Resque::Uniqueness).to receive(:default_lock_type).and_return(:until_and_while_executing)
       end
 
       it { is_expected.to eq :until_and_while_executing }
     end
 
-    context 'when lock is not valid' do
+    context 'when lock_type is not valid' do
       around do |example|
-        instance.instance_variable_set(:@lock, :not_valid_lock)
+        instance.instance_variable_set(:@lock_type, :not_valid_lock_type)
         example.run
-        instance.instance_variable_set(:@lock, :until_executing)
+        instance.instance_variable_set(:@lock_type, :until_executing)
       end
 
-      its_block { is_expected.to raise_error(NameError, /Unexpected lock\./) }
+      its_block { is_expected.to raise_error(NameError, /Unexpected lock type\./) }
     end
   end
 

@@ -18,13 +18,13 @@ RSpec.describe Resque::Uniqueness do
   let(:starting_worker_output) { "Starting processing #{worker_class} with args: #{displayed_argument}" }
   let(:ending_worker_output) { "Ending processing #{worker_class} with args: #{displayed_argument}" }
 
-  describe 'default_lock' do
-    subject { described_class.default_lock }
+  describe 'default_lock_type' do
+    subject { described_class.default_lock_type }
 
     around do |example|
-      described_class.instance_variable_set(:@default_lock, :while_executing)
+      described_class.instance_variable_set(:@default_lock_type, :while_executing)
       example.run
-      described_class.instance_variable_set(:@default_lock, :until_executing)
+      described_class.instance_variable_set(:@default_lock_type, :until_executing)
     end
 
     it { is_expected.to eq :while_executing }

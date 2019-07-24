@@ -4,7 +4,7 @@ RSpec.describe Resque::Uniqueness::Lock::WhileExecuting do
   let(:klass_with_plugin) { WhileExecutingWorker }
   let(:klass_without_plugin) do
     class NotIncludedPlugin
-      @lock = :while_executing
+      @lock_type = :while_executing
     end
     NotIncludedPlugin
   end

@@ -4,7 +4,7 @@ RSpec.describe Resque::Uniqueness::Lock::UntilExecuting do
   let(:klass_with_plugin) { UntilExecutingWorker }
   let(:klass_without_plugin) do
     class NotIncludedPlugin
-      @lock = :until_executing
+      @lock_type = :until_executing
     end
     NotIncludedPlugin
   end

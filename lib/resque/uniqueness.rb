@@ -25,10 +25,10 @@ module Resque
     EXECUTING_REDIS_KEY_PREFIX = 'executing'
     SCHEDULED_REDIS_KEY_PREFIX = 'scheduled'
 
-    @default_lock = :until_executing
+    @default_lock_type = :until_executing
 
     class << self
-      attr_accessor :default_lock
+      attr_accessor :default_lock_type
     end
 
     Lock::Base.clear_executing

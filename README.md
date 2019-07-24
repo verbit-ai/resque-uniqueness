@@ -50,9 +50,9 @@ gem install resque-uniqueness
 
 ## Global Configuration
 
-You can set a default lock for all workers with:
+You can set a default lock type for all workers with:
 ```ruby 
-Resque::Uniqueness.default_lock = :while_executing
+Resque::Uniqueness.default_lock_type = :while_executing
 ```
 By default all jobs have an `until_executing` lock type.
 
@@ -72,7 +72,7 @@ To disable locking for some particular child, write:
 
 ``` ruby
 class ChildWithDisabledLocking < Parent
-  @lock = :none
+  @lock_type = :none
 end
 ```
 
@@ -81,7 +81,7 @@ end
 ### Until Executing
 
 ```ruby
-@lock = :until_executing
+@lock_type = :until_executing
 ```
 
 Locks from when the client pushes the job to the queue. Will be unlocked before the server starts processing the job.
@@ -89,7 +89,7 @@ Locks from when the client pushes the job to the queue. Will be unlocked before 
 ### Until And While Executing
 
 ```ruby
-@lock = :until_and_while_executing
+@lock_type = :until_and_while_executing
 ```
 
 Locks when the client pushes the job to the queue. The queue will be unlocked when the server starts processing the job. The server then goes on to creating a runtime lock for the job to prevent simultaneous jobs from being executed. As soon as the server starts processing a job, the client can push the same job to the queue.
@@ -97,7 +97,7 @@ Locks when the client pushes the job to the queue. The queue will be unlocked wh
 ### While Executing
 
 ```ruby
-@lock = :while_executing
+@lock_type = :while_executing
 ```
 
 With this lock type it is possible to put any number of these jobs on the queue, but as the server pops the job from the queue it will create a lock and then wait until other locks are done processing. It _looks_ like multiple jobs are running at the same time but in fact the second job will only be waiting for the first job to finish.

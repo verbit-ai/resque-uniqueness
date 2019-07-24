@@ -42,17 +42,17 @@ class TestWorker
 end
 
 class WhileExecutingWorker < TestWorker
-  @lock = :while_executing
+  @lock_type = :while_executing
   @queue = :test_job
 end
 
 class UntilExecutingWorker < TestWorker
-  @lock = :until_executing
+  @lock_type = :until_executing
   @queue = :test_job
 end
 
 class UntilAndWhileExecutingWorker < TestWorker
-  @lock = :until_and_while_executing
+  @lock_type = :until_and_while_executing
   @queue = :test_job
 
   def self.perform(*args)
@@ -64,6 +64,6 @@ class UntilAndWhileExecutingWorker < TestWorker
 end
 
 class NoneWorker < TestWorker
-  @lock = :none
+  @lock_type = :none
   @queue = :test_job
 end

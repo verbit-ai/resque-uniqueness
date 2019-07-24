@@ -4,10 +4,10 @@ module Resque
   module Uniqueness
     module Lock
       # Locks from when the client schedule or pushes the job to the queue. Will be unlocked before the server starts processing the job.
-      # All other same jobs will be ignored, when trying to queued ot schedule with lock.
+      # All other same jobs will be ignored, when trying to queued on schedule with lock.
       # Initialize example:
       #   class TestWorker
-      #     @lock = :until_executing
+      #     @lock_type = :until_executing
       #   end
       class UntilExecuting < Base
         def locked_on_schedule?

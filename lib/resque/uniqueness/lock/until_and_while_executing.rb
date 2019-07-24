@@ -8,6 +8,7 @@ module Resque
       # The queue will be unlocked when the server starts processing the job.
       # The server then goes on to creating a runtime lock for the job to prevent simultaneous jobs from being executed.
       # As soon as the server starts processing a job, the client can push the same job to the queue.
+      #   @lock_type = :until_and_while_executing
       class UntilAndWhileExecuting < Base
         extend Forwardable
 

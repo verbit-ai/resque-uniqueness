@@ -3,7 +3,7 @@
 module Resque
   module Uniqueness
     # Container for Ressque::Uniqueness::Job representation
-    # Implements four locks:
+    # Implements four locks types:
     #   until_executing - not allow to add into schedule or queue the same jobs with the same args
     #   while_executing - executes the same jobs with the same args one by one
     #   until_and_while_executing - mix of until_executing and while_executing lock types
@@ -85,7 +85,7 @@ module Resque
 
       def initialize(job)
         @job = job
-        lock_key = payload_class.respond_to?(:lock) ? payload_class.lock : :none
+        lock_key = payload_class.respond_to?(:lock_type) ? payload_class.lock_type : :none
         @lock = LOCKS[lock_key].new(self)
       end
 

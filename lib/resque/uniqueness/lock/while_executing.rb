@@ -9,7 +9,7 @@ module Resque
       # Job will be executed one by one.
       # Initialize example:
       #   class TestWorker
-      #     @lock = :while_executing
+      #     @lock_type = :while_executing
       #   end
       class WhileExecuting < Base
         def locked_on_execute?

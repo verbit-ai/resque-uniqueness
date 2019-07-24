@@ -7,7 +7,7 @@ module Resque
     #   class YourJobClass
     #     include Resque::Plugins::Uniqueness
     #     # optional:
-    #     @lock = .....
+    #     @lock_type = .....
     # See README for details on settings and lock types.
     module Uniqueness
       def self.included(base)
@@ -34,14 +34,14 @@ module Resque
           job.lock_schedule if job.should_lock_on_schedule?
         end
 
-        # Simply returns lock type of current job. If instance_variable `@lock` is not set, set it to default value
-        def lock
-          @lock ||= Resque::Uniqueness.default_lock
-          unless Resque::Uniqueness::Job::LOCKS.key?(@lock)
-            raise NameError, "Unexpected lock. Available lock types: #{Resque::Uniqueness::Job::LOCKS.keys}, current lock type: #{@lock}"
+        # Simply returns lock type of current job. If instance_variable `@lock_type` is not set, set it to default value
+        def lock_type
+          @lock_type ||= Resque::Uniqueness.default_lock_type
+          unless Resque::Uniqueness::Job::LOCKS.key?(@lock_type)
+            raise NameError, "Unexpected lock type. Available lock types: #{Resque::Uniqueness::Job::LOCKS.keys}, current lock type: #{@lock_type}"
           end
 
-          @lock
+          @lock_type
         end
 
         # Simple hack.
