@@ -45,7 +45,7 @@ module Resque
         def reserve(queue)
           return super if Resque.inline?
 
-          job = Resque::Uniqueness::Instance.pop_unlocked_on_execute_from_queue(queue)
+          job = Resque::Uniqueness.pop_unlocked_on_execute_from_queue(queue)
 
           return unless job
 
@@ -61,7 +61,7 @@ module Resque
           res = false
           Resque.redis.multi do
             res = super
-            Resque::Uniqueness::Instance.destroy(queue, klass, *args)
+            Resque::Uniqueness.destroy(queue, klass, *args)
           end
           res
         end

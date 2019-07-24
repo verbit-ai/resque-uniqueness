@@ -70,7 +70,7 @@ RSpec.describe Resque::Uniqueness::JobExtension do
     let(:job_payload) { {'class' => UntilAndWhileExecutingWorker, 'args' => args} }
     let(:args) { %w[locked_on_schedule should_lock_on_execute] }
 
-    before { allow(Resque::Uniqueness::Instance).to receive(:pop_unlocked_on_execute_from_queue).and_return(job) }
+    before { allow(Resque::Uniqueness).to receive(:pop_unlocked_on_execute_from_queue).and_return(job) }
 
     its_block { is_expected.to send_message(lock_instance, :unlock_schedule) }
     its_block { is_expected.to send_message(lock_instance, :lock_execute) }
@@ -117,11 +117,11 @@ RSpec.describe Resque::Uniqueness::JobExtension do
 
     before do
       allow(Resque::Job).to receive(:data_store).and_return(data_store_instance)
-      allow(Resque::Uniqueness::Instance).to receive(:destroy)
+      allow(Resque::Uniqueness).to receive(:destroy)
     end
 
     its_block { is_expected.to send_message(data_store_instance, :remove_from_queue).returning(2) }
-    its_block { is_expected.to send_message(Resque::Uniqueness::Instance, :destroy) }
+    its_block { is_expected.to send_message(Resque::Uniqueness, :destroy) }
     it { is_expected.to eq 2 }
 
     context 'when resque inline' do
@@ -132,7 +132,7 @@ RSpec.describe Resque::Uniqueness::JobExtension do
       end
 
       its_block { is_expected.to send_message(data_store_instance, :remove_from_queue).returning(2) }
-      its_block { is_expected.not_to send_message(Resque::Uniqueness::Instance, :destroy) }
+      its_block { is_expected.not_to send_message(Resque::Uniqueness, :destroy) }
       it { is_expected.to eq 2 }
     end
   end
