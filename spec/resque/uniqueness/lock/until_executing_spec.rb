@@ -8,7 +8,7 @@ RSpec.describe Resque::Uniqueness::Lock::UntilExecuting do
     end
     NotIncludedPlugin
   end
-  let(:job) { Resque::Job.new(nil, 'class' => klass, args: []).uniq_wrapper }
+  let(:job) { Resque::Job.new(nil, 'class' => klass, args: []).uniqueness }
   let(:lock_instance) { described_class.new(job) }
   let(:redis_key) { lock_instance.send(:redis_key) }
   let(:klass) { klass_with_plugin }

@@ -37,8 +37,8 @@ module Resque
         # Simply returns lock type of current job. If instance_variable `@lock_type` is not set, set it to default value
         def lock_type
           @lock_type ||= Resque::Uniqueness.default_lock_type
-          unless Resque::Uniqueness::Job::LOCKS.key?(@lock_type)
-            raise NameError, "Unexpected lock type. Available lock types: #{Resque::Uniqueness::Job::LOCKS.keys}, current lock type: #{@lock_type}"
+          unless Resque::Uniqueness::Instance::LOCKS.key?(@lock_type)
+            raise NameError, "Unexpected lock type. Available lock types: #{Resque::Uniqueness::Instance::LOCKS.keys}, current lock type: #{@lock_type}"
           end
 
           @lock_type
@@ -63,7 +63,7 @@ module Resque
         end
 
         def create_job(args)
-          Resque::Job.new(nil, 'class' => name, 'args' => args)
+          Job.new(nil, 'class' => name, 'args' => args)
         end
       end
     end

@@ -2,7 +2,7 @@
 
 require_relative '../../shared_contexts/with_lock_spec'
 
-RSpec.describe Resque::Uniqueness::Job do
+RSpec.describe Resque::Uniqueness::Instance do
   let(:queue) { :test_job }
   let(:queue_key) { "queue:#{queue}" }
 

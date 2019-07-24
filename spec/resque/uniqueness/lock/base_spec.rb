@@ -22,7 +22,7 @@ RSpec.describe Resque::Uniqueness::Lock::Base do
   describe '#plugin_activated?' do
     subject { described_class.new(job).send(:plugin_activated?) }
 
-    let(:job) { Resque::Job.new(nil, 'class' => klass, args: []).uniq_wrapper }
+    let(:job) { Resque::Job.new(nil, 'class' => klass, args: []).uniqueness }
 
     context 'when klass include plugin' do
       let(:klass) do

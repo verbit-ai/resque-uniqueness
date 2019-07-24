@@ -12,7 +12,7 @@ module Resque
         end
       end
 
-      def_delegators :uniq_wrapper,
+      def_delegators :uniqueness,
                      :lock_execute,
                      :lock_schedule,
                      :unlock_execute,
@@ -45,7 +45,7 @@ module Resque
         def reserve(queue)
           return super if Resque.inline?
 
-          job = Resque::Uniqueness::Job.pop_unlocked_on_execute_from_queue(queue)
+          job = Resque::Uniqueness::Instance.pop_unlocked_on_execute_from_queue(queue)
 
           return unless job
 
@@ -61,7 +61,7 @@ module Resque
           res = false
           Resque.redis.multi do
             res = super
-            Resque::Uniqueness::Job.destroy(queue, klass, *args)
+            Resque::Uniqueness::Instance.destroy(queue, klass, *args)
           end
           res
         end
@@ -75,8 +75,8 @@ module Resque
         unlock_execute if locked_on_execute?
       end
 
-      def uniq_wrapper
-        @uniq_wrapper ||= Resque::Uniqueness::Job.new(self)
+      def uniqueness
+        @uniqueness ||= Resque::Uniqueness::Instance.new(self)
       end
     end
   end

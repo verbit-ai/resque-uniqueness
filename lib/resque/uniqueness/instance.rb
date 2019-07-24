@@ -2,13 +2,13 @@
 
 module Resque
   module Uniqueness
-    # Container for Ressque::Uniqueness::Job representation
+    # Uniqueness instance for Resque::Job
     # Implements four locks types:
     #   until_executing - not allow to add into schedule or queue the same jobs with the same args
     #   while_executing - executes the same jobs with the same args one by one
     #   until_and_while_executing - mix of until_executing and while_executing lock types
     #   base - uses for cases, when plugin not included. Just a stub
-    class Job
+    class Instance
       extend Forwardable
 
       LOCKS = {
@@ -45,13 +45,13 @@ module Resque
       def self.pop_unlocked_on_execute_from_queue(queue)
         payload = Resque.data_store.everything_in_queue(queue).find(&method(:unlocked_on_execute?))
 
-        job = payload && Resque::Job.new(queue, Resque.decode(payload))
+        job = payload && Job.new(queue, Resque.decode(payload))
         job&.remove_from_queue
         job
       end
 
       def self.unlocked_on_execute?(item)
-        !Resque::Job.new(nil, Resque.decode(item)).locked_on_execute?
+        !Job.new(nil, Resque.decode(item)).locked_on_execute?
       end
 
       def self.destroy(queue, klass, *args)
@@ -77,7 +77,7 @@ module Resque
       end
 
       def self.unlock_schedule(queue, item)
-        job = Resque::Job.new(queue, item)
+        job = Job.new(queue, item)
         job.unlock_schedule if job.locked_on_schedule?
       end
 

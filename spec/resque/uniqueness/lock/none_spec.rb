@@ -2,7 +2,7 @@
 
 RSpec.describe Resque::Uniqueness::Lock::None do
   let(:klass) { NoneWorker }
-  let(:job) { Resque::Job.new(nil, 'class' => klass, args: []).uniq_wrapper }
+  let(:job) { Resque::Job.new(nil, 'class' => klass, args: []).uniqueness }
   let(:lock_instance) { described_class.new(job) }
 
   describe '#locked_on_execute?' do

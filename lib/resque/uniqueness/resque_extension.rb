@@ -18,7 +18,7 @@ module Resque
           res = false
           Resque.redis.multi do
             res = super
-            Resque::Uniqueness::Job.remove_queue(queue)
+            Resque::Uniqueness::Instance.remove_queue(queue)
           end
           res
         end
@@ -27,7 +27,7 @@ module Resque
           return super if Resque.inline?
 
           res = super
-          Resque::Uniqueness::Job.unlock_schedule(nil, decode(encoded_item))
+          Resque::Uniqueness::Instance.unlock_schedule(nil, decode(encoded_item))
           res
         end
 
@@ -36,7 +36,7 @@ module Resque
           # If removed_count > zero we should to unlock schedule for this job
           return removed_count if Resque.inline? || removed_count.zero?
 
-          Resque::Uniqueness::Job.unlock_schedule(nil, 'class' => klass.to_s, 'args' => args)
+          Resque::Uniqueness::Instance.unlock_schedule(nil, 'class' => klass.to_s, 'args' => args)
           removed_count
         end
       end

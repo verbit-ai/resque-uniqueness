@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    resque-uniqueness (0.1.0)
+    resque-uniqueness (0.0.1)
       resque (~> 2.0.0)
       resque-scheduler (~> 4.0)
 
