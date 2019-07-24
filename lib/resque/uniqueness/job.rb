@@ -15,7 +15,7 @@ module Resque
         until_executing: Lock::UntilExecuting,
         while_executing: Lock::WhileExecuting,
         until_and_while_executing: Lock::UntilAndWhileExecuting,
-        base: Lock::Base
+        none: Lock::None
       }.freeze
 
       attr_reader :job
@@ -85,7 +85,7 @@ module Resque
 
       def initialize(job)
         @job = job
-        lock_key = payload_class.respond_to?(:lock) ? payload_class.lock : :base
+        lock_key = payload_class.respond_to?(:lock) ? payload_class.lock : :none
         @lock = LOCKS[lock_key].new(self)
       end
 

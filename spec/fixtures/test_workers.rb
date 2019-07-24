@@ -62,3 +62,8 @@ class UntilAndWhileExecutingWorker < TestWorker
     after_processing(args)
   end
 end
+
+class NoneWorker < TestWorker
+  @lock = :none
+  @queue = :test_job
+end

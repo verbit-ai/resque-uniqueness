@@ -72,7 +72,7 @@ To disable locking for some particular child, write:
 
 ``` ruby
 class ChildWithDisabledLocking < Parent
-  @lock = :base
+  @lock = :none
 end
 ```
 
