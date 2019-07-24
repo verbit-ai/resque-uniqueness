@@ -39,7 +39,7 @@ module Resque
         end
 
         def redis_key
-          @redis_key ||= "#{EXECUTING_REDIS_KEY_PREFIX}:#{job.redis_key}"
+          @redis_key ||= "#{EXECUTING_REDIS_KEY_PREFIX}:#{uniqueness_instance.redis_key}"
         end
       end
     end

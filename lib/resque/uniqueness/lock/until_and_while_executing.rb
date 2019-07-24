@@ -12,10 +12,10 @@ module Resque
       class UntilAndWhileExecuting < Base
         extend Forwardable
 
-        def initialize(job)
-          super(job)
-          @until_executing_lock = UntilExecuting.new(job)
-          @while_executing_lock = WhileExecuting.new(job)
+        def initialize(uniqueness_instance)
+          super(uniqueness_instance)
+          @until_executing_lock = UntilExecuting.new(uniqueness_instance)
+          @while_executing_lock = WhileExecuting.new(uniqueness_instance)
         end
 
         def_delegators :@until_executing_lock,

@@ -19,12 +19,12 @@ module Resque
           end
         end
 
-        def initialize(job)
-          @job = job
+        def initialize(uniqueness_instance)
+          @uniqueness_instance = uniqueness_instance
         end
 
         def redis
-          job.redis
+          uniqueness_instance.redis
         end
 
         def locked_on_schedule?
@@ -61,10 +61,10 @@ module Resque
 
         private
 
-        attr_reader :job
+        attr_reader :uniqueness_instance
 
         def plugin_activated?
-          job.payload_class.included_modules.include?(::Resque::Plugins::Uniqueness)
+          uniqueness_instance.payload_class.included_modules.include?(::Resque::Plugins::Uniqueness)
         end
       end
     end

@@ -4,24 +4,11 @@ module Resque
   module Uniqueness
     # Extension for Resque::Job class
     module JobExtension
-      extend Forwardable
-
       def self.prepended(base)
         class << base
           prepend ClassMethods
         end
       end
-
-      def_delegators :uniqueness,
-                     :lock_execute,
-                     :lock_schedule,
-                     :unlock_execute,
-                     :unlock_schedule,
-                     :locked_on_execute?,
-                     :locked_on_schedule?,
-                     :should_lock_on_execute?,
-                     :should_lock_on_schedule?,
-                     :remove_from_queue
 
       # Class methods for overriding basic Resque::Job class
       module ClassMethods
@@ -33,9 +20,9 @@ module Resque
 
           job = new(queue, 'class' => klass, 'args' => decode(encode(args)))
 
-          return if job.locked_on_schedule?
+          return if job.uniqueness.locked_on_schedule?
 
-          job.lock_schedule if job.should_lock_on_schedule?
+          job.uniqueness.lock_schedule if job.uniqueness.should_lock_on_schedule?
           super
         end
 
@@ -49,8 +36,8 @@ module Resque
 
           return unless job
 
-          job.unlock_schedule if job.locked_on_schedule?
-          job.lock_execute if job.should_lock_on_execute?
+          job.uniqueness.unlock_schedule if job.uniqueness.locked_on_schedule?
+          job.uniqueness.lock_execute if job.uniqueness.should_lock_on_execute?
           job
         end
 
@@ -72,7 +59,7 @@ module Resque
       def perform
         super
       ensure
-        unlock_execute if locked_on_execute?
+        uniqueness.unlock_execute if uniqueness.locked_on_execute?
       end
 
       def uniqueness
