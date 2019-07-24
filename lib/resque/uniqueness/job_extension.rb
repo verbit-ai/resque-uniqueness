@@ -3,6 +3,8 @@
 module Resque
   module Uniqueness
     # Extension for Resque::Job class
+    # Override create, reserve, destroy and perform methods for allowing to work with lock
+    # And adding uniqueness wrapper to the Resque::Job
     module JobExtension
       def self.prepended(base)
         class << base
