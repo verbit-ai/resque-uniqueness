@@ -13,8 +13,6 @@ require_relative 'uniqueness/job_extension'
 require_relative 'uniqueness/resque_extension'
 require_relative 'plugins/uniqueness'
 
-Resque.redis = 'localhost:6379/resque_uniqueness_test' if ENV['REDIS_ENV'] == 'test'
-
 Resque.prepend Resque::Uniqueness::ResqueExtension
 Resque::Job.prepend Resque::Uniqueness::JobExtension
 
@@ -73,8 +71,8 @@ module Resque
         job.uniqueness.unlock_schedule if job.uniqueness.locked_on_schedule?
       end
     end
-
-    # Clear all executing locks from redis (could be present because of unexpected terminated)
-    Lock::Base.clear_executing
   end
 end
+
+# Clear all executing locks from redis (could be present because of unexpected terminated)
+Resque::Uniqueness::Lock::Base.clear_executing

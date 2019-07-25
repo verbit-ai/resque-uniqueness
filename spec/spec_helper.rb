@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 require 'bundler/setup'
+require 'rspec'
 require 'saharspec'
 require 'rspec/its'
 
-ENV['REDIS_ENV'] = 'test'
+Resque.redis = 'localhost:6379/resque_uniqueness_test'
 
 require 'resque/uniqueness'
 require_relative 'fixtures/test_workers'

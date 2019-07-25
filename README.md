@@ -106,11 +106,11 @@ With this lock type it is possible to put any number of these jobs on the queue,
 
 You should to run resque workers:
 
-`REDIS_ENV=test QUEUE=* COUNT=5 bundle exec rake resque:workers`
+`QUEUE=* COUNT=5 bundle exec rake resque:workers`
 
 and also resque scheduler:
 
-`REDIS_ENV=test bundle exec resque:scheduler`
+`bundle exec resque:scheduler`
 
 And after it:
 
