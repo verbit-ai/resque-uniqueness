@@ -15,7 +15,7 @@ module Resque
         end
 
         def should_lock_on_schedule?
-          plugin_activated?
+          true
         end
 
         def lock_schedule

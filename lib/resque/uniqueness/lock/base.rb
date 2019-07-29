@@ -62,10 +62,6 @@ module Resque
         private
 
         attr_reader :uniqueness_instance
-
-        def plugin_activated?
-          uniqueness_instance.payload_class.included_modules.include?(::Resque::Plugins::Uniqueness)
-        end
       end
     end
   end

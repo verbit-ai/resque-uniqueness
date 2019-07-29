@@ -17,7 +17,7 @@ module Resque
         end
 
         def should_lock_on_execute?
-          plugin_activated?
+          true
         end
 
         def lock_execute
