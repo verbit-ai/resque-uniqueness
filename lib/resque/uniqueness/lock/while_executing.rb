@@ -12,6 +12,8 @@ module Resque
       #     @lock_type = :while_executing
       #   end
       class WhileExecuting < Base
+        PREFIX = 'executing'
+
         def locked_on_execute?
           should_lock_on_execute? && already_executing?
         end
@@ -36,10 +38,6 @@ module Resque
 
         def already_executing?
           redis.get(redis_key).to_i.positive?
-        end
-
-        def redis_key
-          @redis_key ||= "#{EXECUTING_REDIS_KEY_PREFIX}:#{uniqueness_instance.redis_key}"
         end
       end
     end

@@ -4,10 +4,10 @@ require 'bundler/setup'
 require 'rspec'
 require 'saharspec'
 require 'rspec/its'
+require 'resque/uniqueness'
 
 Resque.redis = 'localhost:6379/resque_uniqueness_test'
 
-require 'resque/uniqueness'
 require_relative 'fixtures/test_workers'
 
 RSpec.configure do |config|

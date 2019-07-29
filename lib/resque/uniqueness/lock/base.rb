@@ -13,18 +13,18 @@ module Resque
         def self.clear_executing
           cursor = '0'
           loop do
-            cursor, keys = Resque.redis.scan(cursor, match: "#{EXECUTING_REDIS_KEY_PREFIX}:#{REDIS_KEY_PREFIX}:*")
+            cursor, keys = Resque.redis.scan(cursor, match: "#{WhileExecuting::PREFIX}:#{REDIS_KEY_PREFIX}:*")
             Resque.redis.del(*keys) if keys.any?
             break if cursor.to_i.zero?
           end
         end
 
-        def initialize(uniqueness_instance)
-          @uniqueness_instance = uniqueness_instance
+        def initialize(job)
+          @job = job
         end
 
         def redis
-          uniqueness_instance.redis
+          job.redis
         end
 
         def locked_on_schedule?
@@ -61,7 +61,11 @@ module Resque
 
         private
 
-        attr_reader :uniqueness_instance
+        attr_reader :job
+
+        def redis_key
+          "#{self.class::PREFIX}:#{REDIS_KEY_PREFIX}:#{Resque.encode(job.payload)}"
+        end
       end
     end
   end

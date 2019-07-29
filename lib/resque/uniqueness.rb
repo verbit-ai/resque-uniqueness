@@ -20,8 +20,6 @@ module Resque
   # Base gem module
   module Uniqueness
     REDIS_KEY_PREFIX = 'resque_uniqueness'
-    EXECUTING_REDIS_KEY_PREFIX = 'executing'
-    SCHEDULED_REDIS_KEY_PREFIX = 'scheduled'
 
     @default_lock_type = :until_executing
 

@@ -1,24 +1,15 @@
 # frozen_string_literal: true
 
 RSpec.describe Resque::Uniqueness::Lock::WhileExecuting do
-  let(:klass_with_plugin) { WhileExecutingWorker }
-  let(:klass_without_plugin) do
-    class NotIncludedPlugin
-      @lock_type = :while_executing
-    end
-    NotIncludedPlugin
-  end
   let(:job) { Resque::Job.new(nil, 'class' => klass, args: []).uniqueness }
   let(:lock_instance) { described_class.new(job) }
   let(:redis_key) { lock_instance.send(:redis_key) }
-  let(:klass) { klass_with_plugin }
+  let(:klass) { WhileExecutingWorker }
 
   describe '#locked_on_execute?' do
     subject { lock_instance.locked_on_execute? }
 
-    context 'when plugin activated and already executing' do
-      let(:klass) { klass_with_plugin }
-
+    context 'when already executing' do
       around do |example|
         Resque.redis.incr(redis_key)
         example.run
@@ -28,27 +19,7 @@ RSpec.describe Resque::Uniqueness::Lock::WhileExecuting do
       it { is_expected.to be true }
     end
 
-    context 'when plugin activated and not executing' do
-      let(:klass) { klass_with_plugin }
-
-      it { is_expected.to be false }
-    end
-
-    context 'when plugin not activated and not executing' do
-      let(:klass) { klass_without_plugin }
-
-      it { is_expected.to be false }
-    end
-
-    context 'when plugin not activated and already executing' do
-      let(:klass) { klass_without_plugin }
-
-      around do |example|
-        Resque.redis.incr(redis_key)
-        example.run
-        Resque.redis.del(redis_key)
-      end
-
+    context 'when not executing' do
       it { is_expected.to be false }
     end
   end
@@ -56,17 +27,7 @@ RSpec.describe Resque::Uniqueness::Lock::WhileExecuting do
   describe '#should_lock_on_execute?' do
     subject { lock_instance.should_lock_on_execute? }
 
-    context 'when plugin activated' do
-      let(:klass) { klass_with_plugin }
-
-      it { is_expected.to be true }
-    end
-
-    context 'when plugin not activated' do
-      let(:klass) { klass_without_plugin }
-
-      it { is_expected.to be false }
-    end
+    it { is_expected.to be true }
   end
 
   describe '#lock_execute' do

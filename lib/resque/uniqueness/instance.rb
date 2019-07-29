@@ -42,10 +42,6 @@ module Resque
         @lock = LOCKS[lock_key].new(self)
       end
 
-      def redis_key
-        @redis_key ||= "#{REDIS_KEY_PREFIX}:#{encoded_payload}"
-      end
-
       def remove_from_queue
         redis.lrem(queue_key, 1, encoded_payload)
       end

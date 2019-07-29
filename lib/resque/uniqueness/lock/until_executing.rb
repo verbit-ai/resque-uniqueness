@@ -10,6 +10,8 @@ module Resque
       #     @lock_type = :until_executing
       #   end
       class UntilExecuting < Base
+        PREFIX = 'scheduled'
+
         def locked_on_schedule?
           should_lock_on_schedule? && already_scheduled?
         end
@@ -34,10 +36,6 @@ module Resque
 
         def already_scheduled?
           redis.get(redis_key).to_i.positive?
-        end
-
-        def redis_key
-          @redis_key ||= "#{SCHEDULED_REDIS_KEY_PREFIX}:#{uniqueness_instance.redis_key}"
         end
       end
     end

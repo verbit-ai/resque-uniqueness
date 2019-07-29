@@ -5,13 +5,13 @@ RSpec.describe Resque::Uniqueness::Lock::Base do
     subject(:call) { described_class.clear_executing }
 
     before do
-      stub_const('Resque::Uniqueness::EXECUTING_REDIS_KEY_PREFIX', 'executing')
+      stub_const('Resque::Uniqueness::Lock::WhileExecuting::PREFIX', 'executing')
       stub_const('Resque::Uniqueness::REDIS_KEY_PREFIX', 'redis_key_prefix')
 
       5.times { Resque.redis.incr("#{key_prefix}#{SecureRandom.uuid}") }
     end
 
-    let(:key_prefix) { "#{Resque::Uniqueness::EXECUTING_REDIS_KEY_PREFIX}:#{Resque::Uniqueness::REDIS_KEY_PREFIX}:" }
+    let(:key_prefix) { "#{Resque::Uniqueness::Lock::WhileExecuting::PREFIX}:#{Resque::Uniqueness::REDIS_KEY_PREFIX}:" }
 
     it 'not include any executing keys' do
       call
