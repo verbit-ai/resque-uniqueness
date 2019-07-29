@@ -36,16 +36,16 @@ module Resque
       # but in case when we have while_executing lock we should to wait when the same job will finish,
       # before we pop the new same job.
       # That's why we should to find the first appropriate job and remove it from queue.
-      def pop_unlocked_on_execute_from_queue(queue)
-        payload = Resque.data_store.everything_in_queue(queue).find(&method(:unlocked_on_execute?))
+      def pop_perform_unlocked_from_queue(queue)
+        payload = Resque.data_store.everything_in_queue(queue).find(&method(:perform_unlocked?))
 
         job = payload && Resque::Job.new(queue, Resque.decode(payload))
         remove_job_from_queue(queue, job)
         job
       end
 
-      def unlocked_on_execute?(item)
-        !Resque::Job.new(nil, Resque.decode(item)).uniqueness.locked_on_execute?
+      def perform_unlocked?(item)
+        !Resque::Job.new(nil, Resque.decode(item)).uniqueness.perform_locked?
       end
 
       def destroy(queue, klass, *args)

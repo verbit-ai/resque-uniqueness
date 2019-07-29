@@ -14,22 +14,22 @@ module Resque
       class WhileExecuting < Base
         PREFIX = 'executing'
 
-        def locked_on_execute?
-          should_lock_on_execute? && already_executing?
+        def perform_locked?
+          should_lock_on_perform? && already_executing?
         end
 
-        def should_lock_on_execute?
+        def should_lock_on_perform?
           true
         end
 
-        def lock_execute
-          raise LockingError, 'Job is already locked on execute' if locked_on_execute?
+        def lock_perform
+          raise LockingError, 'Job is already locked on execute' if perform_locked?
 
           redis.incr(redis_key)
         end
 
-        def unlock_execute
-          raise UnlockingError, 'Job is not locked on execute' unless locked_on_execute?
+        def unlock_perform
+          raise UnlockingError, 'Job is not locked on execute' unless perform_locked?
 
           redis.del(redis_key)
         end

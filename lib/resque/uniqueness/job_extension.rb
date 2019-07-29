@@ -34,12 +34,12 @@ module Resque
         def reserve(queue)
           return super if Resque.inline?
 
-          job = Resque::Uniqueness.pop_unlocked_on_execute_from_queue(queue)
+          job = Resque::Uniqueness.pop_perform_unlocked_from_queue(queue)
 
           return unless job
 
           job.uniqueness.unlock_schedule if job.uniqueness.locked_on_schedule?
-          job.uniqueness.lock_execute if job.uniqueness.should_lock_on_execute?
+          job.uniqueness.lock_perform if job.uniqueness.should_lock_on_perform?
           job
         end
 
@@ -61,7 +61,7 @@ module Resque
       def perform
         super
       ensure
-        uniqueness.unlock_execute if uniqueness.locked_on_execute?
+        uniqueness.unlock_perform if uniqueness.perform_locked?
       end
 
       def uniqueness

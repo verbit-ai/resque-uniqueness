@@ -31,7 +31,7 @@ module Resque
           false
         end
 
-        def locked_on_execute?
+        def perform_locked?
           false
         end
 
@@ -39,15 +39,15 @@ module Resque
           false
         end
 
-        def should_lock_on_execute?
+        def should_lock_on_perform?
           false
         end
 
-        def lock_execute
+        def lock_perform
           raise NotImplementedError
         end
 
-        def unlock_execute
+        def unlock_perform
           raise NotImplementedError
         end
 

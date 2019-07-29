@@ -6,15 +6,15 @@ RSpec.describe Resque::Uniqueness do
   let(:queue) { :test_job }
   let(:queue_key) { "queue:#{queue}" }
 
-  describe '.pop_unlocked_on_execute_from_queue' do
-    subject(:unlocked_job) { described_class.pop_unlocked_on_execute_from_queue(queue) }
+  describe '.pop_perform_unlocked_from_queue' do
+    subject(:unlocked_job) { described_class.pop_perform_unlocked_from_queue(queue) }
 
-    include_context 'with lock', :locked_on_execute
+    include_context 'with lock', :perform_locked
     let(:lock_class) { Resque::Uniqueness::Lock::WhileExecuting }
     let(:jobs) do
       [
-        {class: WhileExecutingWorker, args: [:locked_on_execute]},
-        {class: WhileExecutingWorker, args: [:locked_on_execute]},
+        {class: WhileExecutingWorker, args: [:perform_locked]},
+        {class: WhileExecutingWorker, args: [:perform_locked]},
         {class: WhileExecutingWorker, args: [:unlocked]}
       ]
     end
@@ -32,16 +32,16 @@ RSpec.describe Resque::Uniqueness do
     end
   end
 
-  describe '.unlocked_on_execute?' do
-    subject { described_class.unlocked_on_execute?(encoded_job) }
+  describe '.unperform_unlocked?' do
+    subject { described_class.perform_unlocked?(encoded_job) }
 
-    include_context 'with lock', :locked_on_execute
+    include_context 'with lock', :perform_locked
     let(:lock_class) { Resque::Uniqueness::Lock::WhileExecuting }
     let(:job) { {class: WhileExecutingWorker, args: job_args} }
     let(:encoded_job) { Resque.encode(job) }
 
     context 'when job is locked' do
-      let(:job_args) { [:locked_on_execute] }
+      let(:job_args) { [:perform_locked] }
 
       it { is_expected.to be false }
     end

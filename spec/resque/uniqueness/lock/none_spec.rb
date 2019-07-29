@@ -5,26 +5,26 @@ RSpec.describe Resque::Uniqueness::Lock::None do
   let(:job) { Resque::Job.new(nil, 'class' => klass, args: []) }
   let(:lock_instance) { described_class.new(job) }
 
-  describe '#locked_on_execute?' do
-    subject { lock_instance.locked_on_execute? }
+  describe '#perform_locked?' do
+    subject { lock_instance.perform_locked? }
 
     it { is_expected.to be false }
   end
 
-  describe '#should_lock_on_execute?' do
-    subject { lock_instance.should_lock_on_execute? }
+  describe '#should_lock_on_perform?' do
+    subject { lock_instance.should_lock_on_perform? }
 
     it { is_expected.to be false }
   end
 
-  describe '#lock_execute' do
-    subject(:call) { lock_instance.lock_execute }
+  describe '#lock_perform' do
+    subject(:call) { lock_instance.lock_perform }
 
     its_block { is_expected.to raise_error(NotImplementedError) }
   end
 
-  describe '#unlock_execute' do
-    subject(:call) { lock_instance.unlock_execute }
+  describe '#unlock_perform' do
+    subject(:call) { lock_instance.unlock_perform }
 
     its_block { is_expected.to raise_error(NotImplementedError) }
   end
