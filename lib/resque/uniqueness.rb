@@ -8,7 +8,6 @@ require_relative 'uniqueness/lock/none'
 require_relative 'uniqueness/lock/while_executing'
 require_relative 'uniqueness/lock/until_executing'
 require_relative 'uniqueness/lock/until_and_while_executing'
-require_relative 'uniqueness/instance'
 require_relative 'uniqueness/job_extension'
 require_relative 'uniqueness/resque_extension'
 require_relative 'plugins/uniqueness'
@@ -20,6 +19,13 @@ module Resque
   # Base gem module
   module Uniqueness
     REDIS_KEY_PREFIX = 'resque_uniqueness'
+
+    LOCKS = {
+      until_executing: Lock::UntilExecuting,
+      while_executing: Lock::WhileExecuting,
+      until_and_while_executing: Lock::UntilAndWhileExecuting,
+      none: Lock::None
+    }.freeze
 
     @default_lock_type = :until_executing
 
@@ -67,6 +73,11 @@ module Resque
       def unlock_schedule(queue, item)
         job = Resque::Job.new(queue, item)
         job.uniqueness.unlock_schedule if job.uniqueness.locked_on_schedule?
+      end
+
+      def fetch_for(job)
+        lock_key = job.payload_class.respond_to?(:lock_type) ? job.payload_class.lock_type : :none
+        LOCKS[lock_key].new(job)
       end
 
       private

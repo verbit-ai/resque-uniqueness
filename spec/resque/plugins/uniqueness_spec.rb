@@ -92,7 +92,7 @@ RSpec.describe Resque::Plugins::Uniqueness do
   describe '.lock_type' do
     subject { instance.lock_type }
 
-    before { stub_const('Resque::Uniqueness::Instance::LOCKS', until_and_while_executing: UntilAndWhileExecutingWorker, until_executing: UntilExecutingWorker) }
+    before { stub_const('Resque::Uniqueness::LOCKS', until_and_while_executing: UntilAndWhileExecutingWorker, until_executing: UntilExecutingWorker) }
 
     context 'when @lock_type already set' do
       around do |example|

@@ -65,7 +65,7 @@ module Resque
       end
 
       def uniqueness
-        @uniqueness ||= Resque::Uniqueness::Instance.new(self)
+        @uniqueness ||= Resque::Uniqueness.fetch_for(self)
       end
     end
   end

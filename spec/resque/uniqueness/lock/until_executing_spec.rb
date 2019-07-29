@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe Resque::Uniqueness::Lock::UntilExecuting do
-  let(:job) { Resque::Job.new(nil, 'class' => klass, args: []).uniqueness }
+  let(:job) { Resque::Job.new(nil, 'class' => klass, args: []) }
   let(:lock_instance) { described_class.new(job) }
   let(:redis_key) { lock_instance.send(:redis_key) }
   let(:klass) { UntilExecutingWorker }
