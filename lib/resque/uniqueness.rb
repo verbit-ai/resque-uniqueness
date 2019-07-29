@@ -34,7 +34,7 @@ module Resque
         payload = Resque.data_store.everything_in_queue(queue).find(&method(:unlocked_on_execute?))
 
         job = payload && Resque::Job.new(queue, Resque.decode(payload))
-        job&.uniqueness&.remove_from_queue
+        remove_job_from_queue(queue, job)
         job
       end
 
@@ -67,6 +67,20 @@ module Resque
       def unlock_schedule(queue, item)
         job = Resque::Job.new(queue, item)
         job.uniqueness.unlock_schedule if job.uniqueness.locked_on_schedule?
+      end
+
+      private
+
+      def remove_job_from_queue(queue, job)
+        return false unless job
+
+        job.redis.lrem(queue_key(queue), 1, Resque.encode(job.payload))
+      end
+
+      # Key from lib/resque/data_store.rb `#redis_key_from_queue` method
+      # If in further versions of resque key for queue will change - we should to change this method as well
+      def queue_key(queue)
+        "queue:#{queue}"
       end
     end
   end

@@ -41,22 +41,6 @@ module Resque
         lock_key = payload_class.respond_to?(:lock_type) ? payload_class.lock_type : :none
         @lock = LOCKS[lock_key].new(self)
       end
-
-      def remove_from_queue
-        redis.lrem(queue_key, 1, encoded_payload)
-      end
-
-      private
-
-      # Key from lib/resque/data_store.rb `#redis_key_from_queue` method
-      # If in further versions of resque key for queue will change - we should to change this method as well
-      def queue_key
-        "queue:#{queue}"
-      end
-
-      def encoded_payload
-        @encoded_payload ||= Resque.encode(payload)
-      end
     end
   end
 end
