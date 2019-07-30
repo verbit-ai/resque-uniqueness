@@ -56,14 +56,6 @@ module Resque
         end
       end
 
-      # Main process method in resque
-      # On the end of this method we should to unlock executing
-      def perform
-        super
-      ensure
-        uniqueness.ensure_unlock_perform
-      end
-
       def uniqueness
         @uniqueness ||= Resque::Uniqueness.fetch_for(self)
       end

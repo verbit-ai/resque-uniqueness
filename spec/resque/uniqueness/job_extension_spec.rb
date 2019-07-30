@@ -109,19 +109,4 @@ RSpec.describe Resque::Uniqueness::JobExtension do
       it { is_expected.to eq 2 }
     end
   end
-
-  describe '#perform' do
-    subject { job.perform }
-
-    include_context 'with lock', :ensure_unlock_perform
-    let(:lock_class) { Resque::Uniqueness::Lock::WhileExecuting }
-    let(:job) { Resque::Job.new(:test_queue, 'class' => WhileExecutingWorker, 'args' => args) }
-    let(:args) { [] }
-
-    before { allow(lock_class).to receive(:perform) }
-
-    its_block { is_expected.to send_message(WhileExecutingWorker, :perform) }
-    its_block { is_expected.to send_message(lock_instance, :ensure_unlock_perform) }
-    it { is_expected.to be true }
-  end
 end

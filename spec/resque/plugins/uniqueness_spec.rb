@@ -68,7 +68,7 @@ RSpec.describe Resque::Plugins::Uniqueness do
 
     include_context 'with lock', :try_lock_schedule
     let(:lock_class) { Resque::Uniqueness::Lock::UntilExecuting }
-    let(:args) { ['should_lock_on_schedule'] }
+    let(:args) { [] }
 
     its_block { is_expected.to send_message(lock_instance, :try_lock_schedule) }
 
@@ -81,6 +81,28 @@ RSpec.describe Resque::Plugins::Uniqueness do
 
       its_block { is_expected.not_to send_message(lock_instance, :try_lock_schedule) }
     end
+  end
+
+  describe '.after_perform_check_unique_lock' do
+    subject { instance.after_perform_check_unique_lock(*args) }
+
+    include_context 'with lock', :ensure_unlock_perform
+    let(:instance) { WhileExecutingWorker }
+    let(:lock_class) { Resque::Uniqueness::Lock::WhileExecuting }
+    let(:args) { [] }
+
+    its_block { is_expected.to send_message(lock_instance, :ensure_unlock_perform) }
+  end
+
+  describe '.on_failure_check_unique_lock' do
+    subject { instance.on_failure_check_unique_lock(*args) }
+
+    include_context 'with lock', :ensure_unlock_perform
+    let(:instance) { WhileExecutingWorker }
+    let(:lock_class) { Resque::Uniqueness::Lock::WhileExecuting }
+    let(:args) { [] }
+
+    its_block { is_expected.to send_message(lock_instance, :ensure_unlock_perform) }
   end
 
   describe '.lock_type' do
