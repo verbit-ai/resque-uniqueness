@@ -20,7 +20,7 @@ module Resque
         def create(queue, klass, *args)
           return super if Resque.inline? || klass.call_from_scheduler?
 
-          job = new(queue, 'class' => klass, 'args' => decode(encode(args)))
+          job = new(queue, 'class' => klass.to_s, 'args' => decode(encode(args)))
 
           return if job.uniqueness.locked_on_schedule?
 
