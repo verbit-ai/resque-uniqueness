@@ -16,6 +16,8 @@ module Resque
           should_lock_on_schedule? && already_scheduled?
         end
 
+        private
+
         def should_lock_on_schedule?
           true
         end
@@ -27,12 +29,8 @@ module Resque
         end
 
         def unlock_schedule
-          raise UnlockingError, 'Job is not locked on schedule' unless locked_on_schedule?
-
           redis.del(redis_key)
         end
-
-        private
 
         def already_scheduled?
           redis.get(redis_key).to_i.positive?

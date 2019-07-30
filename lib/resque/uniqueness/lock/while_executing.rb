@@ -18,6 +18,8 @@ module Resque
           should_lock_on_perform? && already_executing?
         end
 
+        private
+
         def should_lock_on_perform?
           true
         end
@@ -29,12 +31,8 @@ module Resque
         end
 
         def unlock_perform
-          raise UnlockingError, 'Job is not locked on execute' unless perform_locked?
-
           redis.del(redis_key)
         end
-
-        private
 
         def already_executing?
           redis.get(redis_key).to_i.positive?

@@ -56,7 +56,7 @@ RSpec.describe Resque::Uniqueness do
   describe '.destroy' do
     subject(:destroy_job) { described_class.destroy(queue, klass, *args) }
 
-    include_context 'with lock', :locked_on_schedule, :unlock_schedule
+    include_context 'with lock', :ensure_unlock_schedule
     let(:lock_class) { Resque::Uniqueness::Lock::UntilExecuting }
     let(:klass) { UntilExecutingWorker }
     let(:args) { [] }
@@ -72,49 +72,35 @@ RSpec.describe Resque::Uniqueness do
     context 'when class is not match' do
       let(:job) { {class: WhileExecutingWorker, args: [:data]} }
 
-      its_block { is_expected.not_to send_message(lock_instance, :unlock_schedule) }
+      its_block { is_expected.not_to send_message(lock_instance, :ensure_unlock_schedule) }
     end
 
     context 'when args doesn\'t match' do
       let(:args) { ['another_data'] }
       let(:job) { {class: klass, args: [:data]} }
 
-      its_block { is_expected.not_to send_message(lock_instance, :unlock_schedule) }
+      its_block { is_expected.not_to send_message(lock_instance, :ensure_unlock_schedule) }
     end
 
-    context 'when args matches and job locked in schedule' do
-      let(:args) { %w[something_strange locked_on_schedule] }
-      let(:job) { {class: klass, args: %i[something_strange locked_on_schedule]} }
+    context 'when args matches' do
+      let(:args) { %w[something_strange] }
+      let(:job) { {class: klass, args: %i[something_strange]} }
 
-      its_block { is_expected.to send_message(lock_instance, :unlock_schedule) }
+      its_block { is_expected.to send_message(lock_instance, :ensure_unlock_schedule) }
     end
 
-    context 'when args matches and job not locked in schedule' do
-      let(:args) { %w[something_strange unlocked] }
-      let(:job) { {class: klass, args: %i[something_strange unlocked]} }
-
-      its_block { is_expected.not_to send_message(lock_instance, :unlock_schedule) }
-    end
-
-    context 'when args are empty and job locked on schedule' do
+    context 'when args are empty' do
       let(:args) { [] }
-      let(:job) { {class: klass, args: %i[something_strange locked_on_schedule]} }
+      let(:job) { {class: klass, args: %i[something_strange]} }
 
-      its_block { is_expected.to send_message(lock_instance, :unlock_schedule) }
-    end
-
-    context 'when args are empty and job not locked in schedule' do
-      let(:args) { [] }
-      let(:job) { {class: klass, args: %i[something_strange unlocked]} }
-
-      its_block { is_expected.not_to send_message(lock_instance, :unlock_schedule) }
+      its_block { is_expected.to send_message(lock_instance, :ensure_unlock_schedule) }
     end
   end
 
   describe '.remove_queue' do
     subject { described_class.remove_queue(queue) }
 
-    include_context 'with lock', :locked_on_schedule, :unlock_schedule
+    include_context 'with lock', :ensure_unlock_schedule
     let(:lock_class) { Resque::Uniqueness::Lock::UntilExecuting }
     let(:jobs) {}
     let(:encoded_jobs) { jobs.map(&Resque.method(:encode)) }
@@ -125,37 +111,26 @@ RSpec.describe Resque::Uniqueness do
       Resque.redis.del(queue_key)
     end
 
-    context 'when jobs are locked on schedule' do
+    context 'when jobs are uniq' do
       let(:jobs) do
         [
-          {class: UntilExecutingWorker, args: %i[locked_on_schedule uniq]},
-          {class: UntilExecutingWorker, args: %i[locked_on_schedule uniq2]}
+          {class: UntilExecutingWorker, args: %i[uniq]},
+          {class: UntilExecutingWorker, args: %i[uniq2]}
         ]
       end
 
-      its_block { is_expected.to send_message(lock_instance, :unlock_schedule).twice }
+      its_block { is_expected.to send_message(lock_instance, :ensure_unlock_schedule).twice }
     end
 
-    context 'when same jobs are locked on schedule' do
+    context 'when jobs are same' do
       let(:jobs) do
         [
-          {class: UntilExecutingWorker, args: %i[locked_on_schedule same]},
-          {class: UntilExecutingWorker, args: %i[locked_on_schedule same]}
+          {class: UntilExecutingWorker, args: %i[same]},
+          {class: UntilExecutingWorker, args: %i[same]}
         ]
       end
 
-      its_block { is_expected.to send_message(lock_instance, :unlock_schedule).once }
-    end
-
-    context 'when jobs are not locked on schedule' do
-      let(:jobs) do
-        [
-          {class: UntilExecutingWorker, args: [:unlocked]},
-          {class: UntilExecutingWorker, args: [:unlocked]}
-        ]
-      end
-
-      its_block { is_expected.not_to send_message(lock_instance, :unlock_schedule) }
+      its_block { is_expected.to send_message(lock_instance, :ensure_unlock_schedule).once }
     end
   end
 end

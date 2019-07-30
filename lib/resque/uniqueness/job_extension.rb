@@ -24,7 +24,7 @@ module Resque
 
           return if job.uniqueness.locked_on_schedule?
 
-          job.uniqueness.lock_schedule if job.uniqueness.should_lock_on_schedule?
+          job.uniqueness.try_lock_schedule
           super
         end
 
@@ -38,8 +38,8 @@ module Resque
 
           return unless job
 
-          job.uniqueness.unlock_schedule if job.uniqueness.locked_on_schedule?
-          job.uniqueness.lock_perform if job.uniqueness.should_lock_on_perform?
+          job.uniqueness.ensure_unlock_schedule
+          job.uniqueness.try_lock_perform
           job
         end
 
@@ -61,7 +61,7 @@ module Resque
       def perform
         super
       ensure
-        uniqueness.unlock_perform if uniqueness.perform_locked?
+        uniqueness.ensure_unlock_perform
       end
 
       def uniqueness

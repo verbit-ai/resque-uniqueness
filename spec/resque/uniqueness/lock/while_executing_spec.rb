@@ -24,14 +24,8 @@ RSpec.describe Resque::Uniqueness::Lock::WhileExecuting do
     end
   end
 
-  describe '#should_lock_on_perform?' do
-    subject { lock_instance.should_lock_on_perform? }
-
-    it { is_expected.to be true }
-  end
-
-  describe '#lock_perform' do
-    subject(:call) { lock_instance.lock_perform }
+  describe '#try_lock_perform' do
+    subject(:call) { lock_instance.try_lock_perform }
 
     it 'increment data in redis' do
       call
@@ -51,12 +45,10 @@ RSpec.describe Resque::Uniqueness::Lock::WhileExecuting do
     end
   end
 
-  describe '#unlock_perform' do
-    subject(:call) { lock_instance.unlock_perform }
+  describe '#ensure_unlock_perform' do
+    subject(:call) { lock_instance.ensure_unlock_perform }
 
-    its_block do
-      is_expected.to raise_error(Resque::Uniqueness::Lock::UnlockingError, /is not locked/)
-    end
+    its_block { is_expected.not_to send_message(lock_instance.redis, :del) }
 
     context 'when locked' do
       around do |example|

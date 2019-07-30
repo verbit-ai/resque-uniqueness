@@ -31,7 +31,7 @@ module Resque
           return true if Resque.inline?
 
           job = create_job(args)
-          job.uniqueness.lock_schedule if job.uniqueness.should_lock_on_schedule?
+          job.uniqueness.try_lock_schedule
         end
 
         # Simply returns lock type of current job. If instance_variable `@lock_type` is not set, set it to default value

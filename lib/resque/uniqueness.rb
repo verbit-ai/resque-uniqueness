@@ -72,7 +72,7 @@ module Resque
 
       def unlock_schedule(queue, item)
         job = Resque::Job.new(queue, item)
-        job.uniqueness.unlock_schedule if job.uniqueness.locked_on_schedule?
+        job.uniqueness.ensure_unlock_schedule
       end
 
       def fetch_for(job)

@@ -66,17 +66,11 @@ RSpec.describe Resque::Plugins::Uniqueness do
   describe '.after_schedule_lock_schedule_if_needed' do
     subject { instance.after_schedule_lock_schedule_if_needed(*args) }
 
-    include_context 'with lock', :should_lock_on_schedule, :lock_schedule
+    include_context 'with lock', :try_lock_schedule
     let(:lock_class) { Resque::Uniqueness::Lock::UntilExecuting }
     let(:args) { ['should_lock_on_schedule'] }
 
-    its_block { is_expected.to send_message(lock_instance, :lock_schedule) }
-
-    context 'when job doesn\'t locked' do
-      let(:args) { ['unlocked'] }
-
-      its_block { is_expected.not_to send_message(lock_instance, :lock_schedule) }
-    end
+    its_block { is_expected.to send_message(lock_instance, :try_lock_schedule) }
 
     context 'when Resque inline' do
       around do |example|
@@ -85,7 +79,7 @@ RSpec.describe Resque::Plugins::Uniqueness do
         Resque.inline = false
       end
 
-      its_block { is_expected.not_to send_message(lock_instance, :lock_schedule) }
+      its_block { is_expected.not_to send_message(lock_instance, :try_lock_schedule) }
     end
   end
 

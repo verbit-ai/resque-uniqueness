@@ -35,6 +35,26 @@ module Resque
           false
         end
 
+        def try_lock_perform
+          lock_perform if should_lock_on_perform?
+        end
+
+        def ensure_unlock_perform
+          unlock_perform if perform_locked?
+        end
+
+        def try_lock_schedule
+          lock_schedule if should_lock_on_schedule?
+        end
+
+        def ensure_unlock_schedule
+          unlock_schedule if locked_on_schedule?
+        end
+
+        private
+
+        attr_reader :job
+
         def should_lock_on_schedule?
           false
         end
@@ -58,10 +78,6 @@ module Resque
         def unlock_schedule
           raise NotImplementedError
         end
-
-        private
-
-        attr_reader :job
 
         def redis_key
           "#{self.class::PREFIX}:#{REDIS_KEY_PREFIX}:#{Resque.encode(job.payload)}"

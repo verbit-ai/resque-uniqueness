@@ -20,15 +20,13 @@ module Resque
 
         def_delegators :@until_executing_lock,
                        :locked_on_schedule?,
-                       :should_lock_on_schedule?,
-                       :lock_schedule,
-                       :unlock_schedule
+                       :try_lock_schedule,
+                       :ensure_unlock_schedule
 
         def_delegators :@while_executing_lock,
                        :perform_locked?,
-                       :should_lock_on_perform?,
-                       :lock_perform,
-                       :unlock_perform
+                       :try_lock_perform,
+                       :ensure_unlock_perform
       end
     end
   end

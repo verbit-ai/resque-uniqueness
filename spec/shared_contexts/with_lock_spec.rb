@@ -24,35 +24,23 @@ RSpec.shared_context 'with lock' do |*stubbed_methods|
     end
   end
 
-  def stub_unlock_schedule
-    allow(lock_instance).to receive(:unlock_schedule)
+  def stub_ensure_unlock_schedule
+    allow(lock_instance).to receive(:ensure_unlock_schedule)
   end
 
-  def stub_unlock_perform
-    allow(lock_instance).to receive(:unlock_perform)
-  end
-
-  def stub_should_lock_on_schedule
-    allow(lock_instance).to receive(:should_lock_on_schedule?) do
-      args_include?('should_lock_on_schedule')
-    end
-  end
-
-  def stub_should_lock_on_perform
-    allow(lock_instance).to receive(:should_lock_on_perform?) do
-      args_include?('should_lock_on_perform')
-    end
+  def stub_ensure_unlock_perform
+    allow(lock_instance).to receive(:ensure_unlock_perform)
   end
 
   def args_include?(argument)
     lock_instance.instance_variable_get(:@job).payload['args'].include?(argument)
   end
 
-  def stub_lock_schedule
-    allow(lock_instance).to receive(:lock_schedule)
+  def stub_try_lock_schedule
+    allow(lock_instance).to receive(:try_lock_schedule)
   end
 
-  def stub_lock_perform
-    allow(lock_instance).to receive(:lock_perform)
+  def stub_try_lock_perform
+    allow(lock_instance).to receive(:try_lock_perform)
   end
 end

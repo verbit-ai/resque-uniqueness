@@ -11,22 +11,16 @@ RSpec.describe Resque::Uniqueness::Lock::None do
     it { is_expected.to be false }
   end
 
-  describe '#should_lock_on_perform?' do
-    subject { lock_instance.should_lock_on_perform? }
+  describe '#try_lock_perform' do
+    subject(:call) { lock_instance.try_lock_perform }
 
-    it { is_expected.to be false }
+    its_block { is_expected.not_to raise_error }
   end
 
-  describe '#lock_perform' do
-    subject(:call) { lock_instance.lock_perform }
+  describe '#ensure_unlock_perform' do
+    subject(:call) { lock_instance.ensure_unlock_perform }
 
-    its_block { is_expected.to raise_error(NotImplementedError) }
-  end
-
-  describe '#unlock_perform' do
-    subject(:call) { lock_instance.unlock_perform }
-
-    its_block { is_expected.to raise_error(NotImplementedError) }
+    its_block { is_expected.not_to raise_error }
   end
 
   describe '#locked_on_schedule?' do
@@ -35,21 +29,15 @@ RSpec.describe Resque::Uniqueness::Lock::None do
     it { is_expected.to be false }
   end
 
-  describe '#should_lock_on_schedule?' do
-    subject { lock_instance.should_lock_on_schedule? }
+  describe '#try_lock_schedule' do
+    subject(:call) { lock_instance.try_lock_schedule }
 
-    it { is_expected.to be false }
+    its_block { is_expected.not_to raise_error }
   end
 
-  describe '#lock_schedule' do
-    subject(:call) { lock_instance.lock_schedule }
+  describe '#ensure_unlock_schedule' do
+    subject(:call) { lock_instance.ensure_unlock_schedule }
 
-    its_block { is_expected.to raise_error(NotImplementedError) }
-  end
-
-  describe '#unlock_schedule' do
-    subject(:call) { lock_instance.unlock_schedule }
-
-    its_block { is_expected.to raise_error(NotImplementedError) }
+    its_block { is_expected.not_to raise_error }
   end
 end
