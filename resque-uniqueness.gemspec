@@ -1,12 +1,10 @@
 # frozen_string_literal: true
 
-# lib = File.expand_path('lib', __dir__)
-# $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require_relative 'lib/resque/uniqueness/version'
+require_relative 'lib/resque/plugins/uniqueness/version'
 
 Gem::Specification.new do |spec|
   spec.name          = 'resque-uniqueness'
-  spec.version       = Resque::Uniqueness::VERSION
+  spec.version       = Resque::Plugins::Uniqueness::VERSION
   spec.authors       = ['Olexandr Hoshylyk']
   spec.email         = ['gashuk95@gmail.com']
 

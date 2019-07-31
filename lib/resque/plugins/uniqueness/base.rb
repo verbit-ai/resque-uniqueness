@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 module Resque
-  module Uniqueness
-    module Lock
+  module Plugins
+    module Uniqueness
       class LockingError < StandardError; end
-      class UnlockingError < StandardError; end
 
       # Base class for Lock instance
       class Base

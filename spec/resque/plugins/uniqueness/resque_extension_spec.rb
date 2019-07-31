@@ -2,7 +2,7 @@
 
 # We already prepended this module in `lib/resque/uniqueness.rb`
 # Therefore we will test Resque module
-RSpec.describe Resque::Uniqueness::ResqueExtension do
+RSpec.describe Resque::Plugins::Uniqueness::ResqueExtension do
   describe '.remove_queue' do
     subject { Resque.remove_queue(:test_queue) }
 
@@ -10,11 +10,11 @@ RSpec.describe Resque::Uniqueness::ResqueExtension do
 
     before do
       allow(Resque).to receive(:data_store).and_return(data_store_instance)
-      allow(Resque::Uniqueness).to receive(:remove_queue)
+      allow(Resque::Plugins::Uniqueness).to receive(:remove_queue)
     end
 
     its_block { is_expected.to send_message(data_store_instance, :remove_queue) }
-    its_block { is_expected.to send_message(Resque::Uniqueness, :remove_queue) }
+    its_block { is_expected.to send_message(Resque::Plugins::Uniqueness, :remove_queue) }
     it { is_expected.to eq :response }
 
     context 'when resque inline' do
@@ -25,7 +25,7 @@ RSpec.describe Resque::Uniqueness::ResqueExtension do
       end
 
       its_block { is_expected.to send_message(data_store_instance, :remove_queue) }
-      its_block { is_expected.not_to send_message(Resque::Uniqueness, :remove_queue) }
+      its_block { is_expected.not_to send_message(Resque::Plugins::Uniqueness, :remove_queue) }
       it { is_expected.to eq :response }
     end
   end
@@ -35,9 +35,9 @@ RSpec.describe Resque::Uniqueness::ResqueExtension do
 
     let(:job) { {class: UntilExecutingWorker, args: []} }
 
-    before { allow(Resque::Uniqueness).to receive(:unlock_schedule) }
+    before { allow(Resque::Plugins::Uniqueness).to receive(:unlock_schedule) }
 
-    its_block { is_expected.to send_message(Resque::Uniqueness, :unlock_schedule) }
+    its_block { is_expected.to send_message(Resque::Plugins::Uniqueness, :unlock_schedule) }
     it { is_expected.to eq 0 }
 
     context 'when resque inline' do
@@ -47,7 +47,7 @@ RSpec.describe Resque::Uniqueness::ResqueExtension do
         Resque.inline = false
       end
 
-      its_block { is_expected.not_to send_message(Resque::Uniqueness, :unlock_schedule) }
+      its_block { is_expected.not_to send_message(Resque::Plugins::Uniqueness, :unlock_schedule) }
       it { is_expected.to eq 0 }
     end
   end
@@ -59,10 +59,10 @@ RSpec.describe Resque::Uniqueness::ResqueExtension do
 
     before do
       allow(Resque.redis).to receive(:lrem).and_return(removed_count)
-      allow(Resque::Uniqueness).to receive(:unlock_schedule)
+      allow(Resque::Plugins::Uniqueness).to receive(:unlock_schedule)
     end
 
-    its_block { is_expected.to send_message(Resque::Uniqueness, :unlock_schedule) }
+    its_block { is_expected.to send_message(Resque::Plugins::Uniqueness, :unlock_schedule) }
     it { is_expected.to eq 2 }
 
     context 'when resque inline' do
@@ -72,14 +72,14 @@ RSpec.describe Resque::Uniqueness::ResqueExtension do
         Resque.inline = false
       end
 
-      its_block { is_expected.not_to send_message(Resque::Uniqueness, :unlock_schedule) }
+      its_block { is_expected.not_to send_message(Resque::Plugins::Uniqueness, :unlock_schedule) }
       it { is_expected.to eq 0 }
     end
 
     context 'when removed count is zero' do
       let(:removed_count) { 0 }
 
-      its_block { is_expected.not_to send_message(Resque::Uniqueness, :unlock_schedule) }
+      its_block { is_expected.not_to send_message(Resque::Plugins::Uniqueness, :unlock_schedule) }
       it { is_expected.to eq 0 }
     end
   end

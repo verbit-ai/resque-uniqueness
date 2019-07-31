@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module Resque
-  module Uniqueness
-    module Lock
+  module Plugins
+    module Uniqueness
       # Locks from when the client schedule or pushes the job to the queue. Will be unlocked before the server starts processing the job.
       # All other same jobs will be ignored, when trying to queued on schedule with lock.
       # Initialize example:

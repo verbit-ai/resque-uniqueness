@@ -4,7 +4,7 @@ require 'bundler/setup'
 require 'rspec'
 require 'saharspec'
 require 'rspec/its'
-require 'resque/uniqueness'
+require 'resque/plugins/uniqueness'
 
 Resque.redis = 'localhost:6379/resque_uniqueness_test'
 

@@ -2,7 +2,7 @@
 
 require 'securerandom'
 
-RSpec.describe Resque::Uniqueness do
+RSpec.describe Resque::Plugins::Uniqueness do
   subject do
     3.times { Resque.enqueue_in(2, worker_class, uniq_argument) }
     3.times { Resque.enqueue(worker_class, uniq_argument) }

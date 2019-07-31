@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe Resque::Uniqueness::Lock::UntilExecuting do
+RSpec.describe Resque::Plugins::Uniqueness::UntilExecuting do
   let(:job) { Resque::Job.new(nil, 'class' => klass, args: []) }
   let(:lock_instance) { described_class.new(job) }
   let(:redis_key) { lock_instance.send(:redis_key) }
@@ -40,7 +40,7 @@ RSpec.describe Resque::Uniqueness::Lock::UntilExecuting do
       end
 
       its_block do
-        is_expected.to raise_error(Resque::Uniqueness::Lock::LockingError, /already locked/)
+        is_expected.to raise_error(Resque::Plugins::Uniqueness::LockingError, /already locked/)
       end
     end
   end

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe Resque::Uniqueness::Lock::None do
+RSpec.describe Resque::Plugins::Uniqueness::None do
   let(:klass) { NoneWorker }
   let(:job) { Resque::Job.new(nil, 'class' => klass, args: []) }
   let(:lock_instance) { described_class.new(job) }

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module Resque
-  module Uniqueness
-    module Lock
+  module Plugins
+    module Uniqueness
       # Create a lock when the job starting to processing with server.
       # Removes lock after tje job will finish.
       # All other same jobs will starts after the lock will be realised.

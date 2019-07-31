@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module Resque
-  module Uniqueness
-    module Lock
+  module Plugins
+    module Uniqueness
       # Mix of UntilExecuting and WhileExecuting locks.
       # Locks when the client pushes the job to the queue.
       # The queue will be unlocked when the server starts processing the job.
