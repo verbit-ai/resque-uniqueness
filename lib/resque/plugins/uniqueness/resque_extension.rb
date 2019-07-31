@@ -16,11 +16,8 @@ module Resque
           def remove_queue(queue)
             return super if Resque.inline?
 
-            res = false
-            Resque.redis.multi do
-              res = super
-              Resque::Plugins::Uniqueness.remove_queue(queue)
-            end
+            res = super
+            Resque::Plugins::Uniqueness.remove_queue(queue)
             res
           end
 
