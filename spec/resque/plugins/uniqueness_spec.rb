@@ -297,11 +297,11 @@ RSpec.describe Resque::Plugins::Uniqueness do
     end
   end
 
-  describe '.clear_executing_locks' do
-    subject(:call) { described_class.clear_executing_locks }
+  describe '.clear_performing_locks' do
+    subject(:call) { described_class.clear_performing_locks }
 
     before do
-      stub_const('Resque::Plugins::Uniqueness::WhileExecuting::PREFIX', 'executing')
+      stub_const('Resque::Plugins::Uniqueness::WhileExecuting::PREFIX', 'performing')
       stub_const('Resque::Plugins::Uniqueness::REDIS_KEY_PREFIX', 'redis_key_prefix')
 
       5.times { Resque.redis.incr("#{key_prefix}#{SecureRandom.uuid}") }
@@ -309,7 +309,7 @@ RSpec.describe Resque::Plugins::Uniqueness do
 
     let(:key_prefix) { "#{Resque::Plugins::Uniqueness::WhileExecuting::PREFIX}:#{Resque::Plugins::Uniqueness::REDIS_KEY_PREFIX}:" }
 
-    it 'not include any executing keys' do
+    it 'not include any performing keys' do
       call
       expect(Resque.redis.keys).not_to include(/#{key_prefix}/)
     end

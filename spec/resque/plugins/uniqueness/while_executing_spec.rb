@@ -9,7 +9,7 @@ RSpec.describe Resque::Plugins::Uniqueness::WhileExecuting do
   describe '#perform_locked?' do
     subject { lock_instance.perform_locked? }
 
-    context 'when already executing' do
+    context 'when already performing' do
       around do |example|
         Resque.redis.incr(redis_key)
         example.run
@@ -19,7 +19,7 @@ RSpec.describe Resque::Plugins::Uniqueness::WhileExecuting do
       it { is_expected.to be true }
     end
 
-    context 'when not executing' do
+    context 'when not performing' do
       it { is_expected.to be false }
     end
   end

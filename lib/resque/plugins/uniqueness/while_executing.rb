@@ -12,10 +12,10 @@ module Resque
       #     @lock_type = :while_executing
       #   end
       class WhileExecuting < Base
-        PREFIX = 'executing'
+        PREFIX = 'performing'
 
         def perform_locked?
-          should_lock_on_perform? && already_executing?
+          should_lock_on_perform? && already_performing?
         end
 
         private
@@ -25,7 +25,7 @@ module Resque
         end
 
         def lock_perform
-          raise LockingError, 'Job is already locked on execute' if perform_locked?
+          raise LockingError, 'Job is already locked on perform' if perform_locked?
 
           redis.incr(redis_key)
         end
@@ -34,7 +34,7 @@ module Resque
           redis.del(redis_key)
         end
 
-        def already_executing?
+        def already_performing?
           redis.get(redis_key).to_i.positive?
         end
       end

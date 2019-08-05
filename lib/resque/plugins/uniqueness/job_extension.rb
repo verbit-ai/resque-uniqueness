@@ -31,7 +31,7 @@ module Resque
 
           # Resque call this method, when starting to process job
           # We should to make sure that we starting to process only unlocked jobs.
-          # And also we should to be sure that we unlock_scheduling and lock executing here
+          # And also we should to be sure that we unlock_queueing and lock performing here
           def reserve(queue)
             return super if Resque.inline?
 

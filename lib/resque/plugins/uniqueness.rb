@@ -62,9 +62,9 @@ module Resque
           base.extend ClassMethods
         end
 
-        # Remove all executing keys from redis.
+        # Remove all performing keys from redis.
         # Using to fix unexpected terminated problem.
-        def clear_executing_locks
+        def clear_performing_locks
           cursor = '0'
           loop do
             cursor, keys = Resque.redis.scan(cursor, match: "#{WhileExecuting::PREFIX}:#{REDIS_KEY_PREFIX}:*")
@@ -201,5 +201,5 @@ module Resque
   end
 end
 
-# Clear all executing locks from redis (could be present because of unexpected terminated)
-Resque::Plugins::Uniqueness.clear_executing_locks
+# Clear all performing locks from redis (could be present because of unexpected terminated)
+Resque::Plugins::Uniqueness.clear_performing_locks
