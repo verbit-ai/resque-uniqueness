@@ -19,9 +19,9 @@ module Resque
         end
 
         def_delegators :@until_executing_lock,
-                       :locked_on_schedule?,
-                       :try_lock_schedule,
-                       :ensure_unlock_schedule
+                       :queueing_locked?,
+                       :try_lock_queueing,
+                       :ensure_unlock_queueing
 
         def_delegators :@while_executing_lock,
                        :perform_locked?,

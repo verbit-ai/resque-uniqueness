@@ -23,20 +23,20 @@ RSpec.describe Resque::Plugins::Uniqueness::None do
     its_block { is_expected.not_to raise_error }
   end
 
-  describe '#locked_on_schedule?' do
-    subject { lock_instance.locked_on_schedule? }
+  describe '#queueing_locked?' do
+    subject { lock_instance.queueing_locked? }
 
     it { is_expected.to be false }
   end
 
-  describe '#try_lock_schedule' do
-    subject(:call) { lock_instance.try_lock_schedule }
+  describe '#try_lock_queueing' do
+    subject(:call) { lock_instance.try_lock_queueing }
 
     its_block { is_expected.not_to raise_error }
   end
 
-  describe '#ensure_unlock_schedule' do
-    subject(:call) { lock_instance.ensure_unlock_schedule }
+  describe '#ensure_unlock_queueing' do
+    subject(:call) { lock_instance.ensure_unlock_queueing }
 
     its_block { is_expected.not_to raise_error }
   end

@@ -7,17 +7,6 @@ module Resque
 
       # Base class for Lock instance
       class Base
-        # Remove all executing keys from redis.
-        # Using to fix unexpected terminated problem.
-        def self.clear_executing
-          cursor = '0'
-          loop do
-            cursor, keys = Resque.redis.scan(cursor, match: "#{WhileExecuting::PREFIX}:#{REDIS_KEY_PREFIX}:*")
-            Resque.redis.del(*keys) if keys.any?
-            break if cursor.to_i.zero?
-          end
-        end
-
         def initialize(job)
           @job = job
         end
@@ -26,7 +15,7 @@ module Resque
           job.redis
         end
 
-        def locked_on_schedule?
+        def queueing_locked?
           false
         end
 
@@ -42,19 +31,19 @@ module Resque
           unlock_perform if perform_locked?
         end
 
-        def try_lock_schedule
-          lock_schedule if should_lock_on_schedule?
+        def try_lock_queueing
+          lock_queueing if should_lock_on_queueing?
         end
 
-        def ensure_unlock_schedule
-          unlock_schedule if locked_on_schedule?
+        def ensure_unlock_queueing
+          unlock_queueing if queueing_locked?
         end
 
         private
 
         attr_reader :job
 
-        def should_lock_on_schedule?
+        def should_lock_on_queueing?
           false
         end
 
@@ -70,11 +59,11 @@ module Resque
           raise NotImplementedError
         end
 
-        def lock_schedule
+        def lock_queueing
           raise NotImplementedError
         end
 
-        def unlock_schedule
+        def unlock_queueing
           raise NotImplementedError
         end
 

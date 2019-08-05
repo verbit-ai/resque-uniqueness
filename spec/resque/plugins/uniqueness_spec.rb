@@ -12,9 +12,9 @@ RSpec.describe Resque::Plugins::Uniqueness do
   describe '.before_enqueue_check_lock_availability' do
     subject { instance.before_enqueue_check_lock_availability(*args) }
 
-    include_context 'with lock', :locked_on_schedule
+    include_context 'with lock', :queueing_locked
     let(:lock_class) { Resque::Plugins::Uniqueness::UntilExecuting }
-    let(:args) { ['locked_on_schedule'] }
+    let(:args) { ['queueing_locked'] }
 
     it { is_expected.to be false }
 
@@ -44,9 +44,9 @@ RSpec.describe Resque::Plugins::Uniqueness do
   describe '.before_schedule_check_lock_availability' do
     subject { instance.before_schedule_check_lock_availability(*args) }
 
-    include_context 'with lock', :locked_on_schedule
+    include_context 'with lock', :queueing_locked
     let(:lock_class) { Resque::Plugins::Uniqueness::UntilExecuting }
-    let(:args) { ['locked_on_schedule'] }
+    let(:args) { ['queueing_locked'] }
 
     it { is_expected.to be false }
 
@@ -67,14 +67,14 @@ RSpec.describe Resque::Plugins::Uniqueness do
     end
   end
 
-  describe '.after_schedule_lock_schedule_if_needed' do
-    subject { instance.after_schedule_lock_schedule_if_needed(*args) }
+  describe '.after_schedule_try_lock_queueing' do
+    subject { instance.after_schedule_try_lock_queueing(*args) }
 
-    include_context 'with lock', :try_lock_schedule
+    include_context 'with lock', :try_lock_queueing
     let(:lock_class) { Resque::Plugins::Uniqueness::UntilExecuting }
     let(:args) { [] }
 
-    its_block { is_expected.to send_message(lock_instance, :try_lock_schedule) }
+    its_block { is_expected.to send_message(lock_instance, :try_lock_queueing) }
 
     context 'when Resque inline' do
       around do |example|
@@ -83,7 +83,7 @@ RSpec.describe Resque::Plugins::Uniqueness do
         Resque.inline = false
       end
 
-      its_block { is_expected.not_to send_message(lock_instance, :try_lock_schedule) }
+      its_block { is_expected.not_to send_message(lock_instance, :try_lock_queueing) }
     end
   end
 
@@ -196,7 +196,7 @@ RSpec.describe Resque::Plugins::Uniqueness do
   end
 
   describe '.unperform_unlocked?' do
-    subject { described_class.perform_unlocked?(encoded_job) }
+    subject { described_class.can_be_performed?(encoded_job) }
 
     include_context 'with lock', :perform_locked
     let(:lock_class) { Resque::Plugins::Uniqueness::WhileExecuting }
@@ -219,7 +219,7 @@ RSpec.describe Resque::Plugins::Uniqueness do
   describe '.destroy' do
     subject(:destroy_job) { described_class.destroy(queue, klass, *args) }
 
-    include_context 'with lock', :ensure_unlock_schedule
+    include_context 'with lock', :ensure_unlock_queueing
     let(:lock_class) { Resque::Plugins::Uniqueness::UntilExecuting }
     let(:klass) { UntilExecutingWorker }
     let(:args) { [] }
@@ -235,35 +235,35 @@ RSpec.describe Resque::Plugins::Uniqueness do
     context 'when class is not match' do
       let(:job) { {class: WhileExecutingWorker, args: [:data]} }
 
-      its_block { is_expected.not_to send_message(lock_instance, :ensure_unlock_schedule) }
+      its_block { is_expected.not_to send_message(lock_instance, :ensure_unlock_queueing) }
     end
 
     context 'when args doesn\'t match' do
       let(:args) { ['another_data'] }
       let(:job) { {class: klass, args: [:data]} }
 
-      its_block { is_expected.not_to send_message(lock_instance, :ensure_unlock_schedule) }
+      its_block { is_expected.not_to send_message(lock_instance, :ensure_unlock_queueing) }
     end
 
     context 'when args matches' do
       let(:args) { %w[something_strange] }
       let(:job) { {class: klass, args: %i[something_strange]} }
 
-      its_block { is_expected.to send_message(lock_instance, :ensure_unlock_schedule) }
+      its_block { is_expected.to send_message(lock_instance, :ensure_unlock_queueing) }
     end
 
     context 'when args are empty' do
       let(:args) { [] }
       let(:job) { {class: klass, args: %i[something_strange]} }
 
-      its_block { is_expected.to send_message(lock_instance, :ensure_unlock_schedule) }
+      its_block { is_expected.to send_message(lock_instance, :ensure_unlock_queueing) }
     end
   end
 
   describe '.remove_queue' do
     subject { described_class.remove_queue(queue) }
 
-    include_context 'with lock', :ensure_unlock_schedule
+    include_context 'with lock', :ensure_unlock_queueing
     let(:lock_class) { Resque::Plugins::Uniqueness::UntilExecuting }
     let(:jobs) {}
     let(:encoded_jobs) { jobs.map(&Resque.method(:encode)) }
@@ -282,7 +282,7 @@ RSpec.describe Resque::Plugins::Uniqueness do
         ]
       end
 
-      its_block { is_expected.to send_message(lock_instance, :ensure_unlock_schedule).twice }
+      its_block { is_expected.to send_message(lock_instance, :ensure_unlock_queueing).twice }
     end
 
     context 'when jobs are same' do
@@ -293,7 +293,25 @@ RSpec.describe Resque::Plugins::Uniqueness do
         ]
       end
 
-      its_block { is_expected.to send_message(lock_instance, :ensure_unlock_schedule).once }
+      its_block { is_expected.to send_message(lock_instance, :ensure_unlock_queueing).once }
+    end
+  end
+
+  describe '.clear_executing_locks' do
+    subject(:call) { described_class.clear_executing_locks }
+
+    before do
+      stub_const('Resque::Plugins::Uniqueness::WhileExecuting::PREFIX', 'executing')
+      stub_const('Resque::Plugins::Uniqueness::REDIS_KEY_PREFIX', 'redis_key_prefix')
+
+      5.times { Resque.redis.incr("#{key_prefix}#{SecureRandom.uuid}") }
+    end
+
+    let(:key_prefix) { "#{Resque::Plugins::Uniqueness::WhileExecuting::PREFIX}:#{Resque::Plugins::Uniqueness::REDIS_KEY_PREFIX}:" }
+
+    it 'not include any executing keys' do
+      call
+      expect(Resque.redis.keys).not_to include(/#{key_prefix}/)
     end
   end
 end

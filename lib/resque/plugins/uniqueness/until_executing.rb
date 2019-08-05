@@ -10,29 +10,29 @@ module Resque
       #     @lock_type = :until_executing
       #   end
       class UntilExecuting < Base
-        PREFIX = 'scheduled'
+        PREFIX = 'queueing'
 
-        def locked_on_schedule?
-          should_lock_on_schedule? && already_scheduled?
+        def queueing_locked?
+          should_lock_on_queueing? && already_queueing?
         end
 
         private
 
-        def should_lock_on_schedule?
+        def should_lock_on_queueing?
           true
         end
 
-        def lock_schedule
-          raise LockingError, 'Job is already locked on schedule' if locked_on_schedule?
+        def lock_queueing
+          raise LockingError, 'Job is already locked on queueing' if queueing_locked?
 
           redis.incr(redis_key)
         end
 
-        def unlock_schedule
+        def unlock_queueing
           redis.del(redis_key)
         end
 
-        def already_scheduled?
+        def already_queueing?
           redis.get(redis_key).to_i.positive?
         end
       end

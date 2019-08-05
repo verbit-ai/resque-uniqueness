@@ -6,10 +6,10 @@ RSpec.describe Resque::Plugins::Uniqueness::UntilExecuting do
   let(:redis_key) { lock_instance.send(:redis_key) }
   let(:klass) { UntilExecutingWorker }
 
-  describe '#locked_on_schedule?' do
-    subject { lock_instance.locked_on_schedule? }
+  describe '#queueing_locked?' do
+    subject { lock_instance.queueing_locked? }
 
-    context 'when already scheduled' do
+    context 'when already queueing' do
       around do |example|
         Resque.redis.incr(redis_key)
         example.run
@@ -19,13 +19,13 @@ RSpec.describe Resque::Plugins::Uniqueness::UntilExecuting do
       it { is_expected.to be true }
     end
 
-    context 'when not scheduled' do
+    context 'when not queueing' do
       it { is_expected.to be false }
     end
   end
 
-  describe '#try_lock_schedule' do
-    subject(:call) { lock_instance.try_lock_schedule }
+  describe '#try_lock_queueing' do
+    subject(:call) { lock_instance.try_lock_queueing }
 
     it 'increment data in redis' do
       call
@@ -45,8 +45,8 @@ RSpec.describe Resque::Plugins::Uniqueness::UntilExecuting do
     end
   end
 
-  describe '#ensure_unlock_schedule' do
-    subject(:call) { lock_instance.ensure_unlock_schedule }
+  describe '#ensure_unlock_queueing' do
+    subject(:call) { lock_instance.ensure_unlock_queueing }
 
     its_block { is_expected.not_to send_message(lock_instance.redis, :del) }
 

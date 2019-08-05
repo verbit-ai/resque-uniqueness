@@ -23,9 +23,9 @@ module Resque
 
             job = new(queue, 'class' => klass.to_s, 'args' => decode(encode(args)))
 
-            return if job.uniqueness.locked_on_schedule?
+            return if job.uniqueness.queueing_locked?
 
-            job.uniqueness.try_lock_schedule
+            job.uniqueness.try_lock_queueing
             super
           end
 
@@ -39,18 +39,16 @@ module Resque
 
             return unless job
 
-            job.uniqueness.ensure_unlock_schedule
+            job.uniqueness.ensure_unlock_queueing
             job.uniqueness.try_lock_perform
             job
           end
 
-          # Destroy with jobs their scheduled locks
+          # Destroy with jobs their queueing locks
           def destroy(queue, klass, *args)
-            return super if Resque.inline?
-
-            res = super
-            Resque::Plugins::Uniqueness.destroy(queue, klass, *args)
-            res
+            super.tap do
+              Resque::Plugins::Uniqueness.destroy(queue, klass, *args) unless Resque.inline?
+            end
           end
         end
 
