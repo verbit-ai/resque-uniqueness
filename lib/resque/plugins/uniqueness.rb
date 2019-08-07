@@ -20,21 +20,27 @@ module Resque
     # It has three modes of uniqueness:
     #   1. until_executing: while the job is in the queue or schedule, no other job of the same class
     #   with the same arguments will be pushed to the queue or scheduled (it would be just ignored);
-    #   when the job is starting to perform, the lock is cleared and another job can be pushed to the queue or scheduled;
-    #   2. while_executing: while the job is performing, no other job of the same class with the same argument
-    #   will start performing (it will wait in the queue until the one performing is finished);
-    #   3. until_and_while_executing: a combination of the above: while the job is pending, another one can not be put
-    #   in the queue or scheduled; and then while it is performing, another can be pushed, but will not be performed
-    #   until the current one is finished.
+    #   when the job is starting to perform, the lock is cleared and another job can be pushed
+    #   to the queue or scheduled;
+    #   2. while_executing: while the job is performing, no other job of the same class with
+    #   the same argument will start performing (it will wait in the queue until the one
+    #   performing is finished);
+    #   3. until_and_while_executing: a combination of the above: while the job is pending,
+    #   another one can not be put in the queue or scheduled; and then while it is performing,
+    #   another can be pushed, but will not be performed until the current one is finished.
     #
-    # It is implemented by providing Resque callbacks where possible, and intercepting (patching) the following places in Resque:
-    #   1. Resque::Uniqueness is aware of, and compatible with a resque-scheduler gem: when a job with until_executing or until_and_while_executing
-    #   lock type is tried to be scheduled, the before_schedule hook checks it and ignores if one is already in queue.
+    # It is implemented by providing Resque callbacks where possible, and intercepting (patching)
+    # the following places in Resque:
+    #   1. Resque::Uniqueness is aware of, and compatible with a resque-scheduler gem: when a job
+    #   with until_executing or until_and_while_executing lock type is tried to be scheduled,
+    #   the before_schedule hook checks it and ignores if one is already in queue.
     #   2. ignoring enqueue (see {Plugins::Uniqueness.before_enqueue_check_lock_availability});
     #   3. putting a job into the queue (see {JobExtension::ClassMethods.create});
     #   4. fetching the job from the queue to perform (see {JobExtension::ClassMethods.reserve});
-    #   5. finishing the job peforming (see {JobExtension#after_perform_check_unique_lock} and {JobExtension#on_failure_check_unique_lock}
-    #   6. also, removing of jobs and queues, to cleanup orphaned locks (see {ResqueExtension} and {JobExtension.destroy}).
+    #   5. finishing the job peforming (see {JobExtension#after_perform_check_unique_lock} and
+    #   {JobExtension#on_failure_check_unique_lock}
+    #   6. also, removing of jobs and queues, to cleanup orphaned locks (see {ResqueExtension}
+    #   and {JobExtension.destroy}).
     # At those points, the lock is set, checked or cleaned, according to job's lock type (see below),
     # via Redis keys unique for this combination of job's class and arguments.
     #
@@ -42,7 +48,8 @@ module Resque
     #   class MyWorker
     #     include Resque::Plugins::Uniqueness
     #
-    #     @lock_type = <desired_type> # :until_executing, :while_executing, :until_and_while_executing or :none
+    #     # :until_executing, :while_executing, :until_and_while_executing or :none
+    #     @lock_type = <desired_type>
     module Uniqueness
       REDIS_KEY_PREFIX = 'resque_uniqueness'
 
@@ -73,15 +80,17 @@ module Resque
           end
         end
 
-        # Resque uses `Resque.pop(queue)` for retrieving jobs from queue,
-        # but in case when we have while_executing lock we should to wait when the same job will finish,
-        # before we pop the new same job.
+        # Resque uses `Resque.pop(queue)` for retrieving jobs from queue, but in case when we have
+        # while_executing lock we should to wait when the same job will finish, before we pop
+        # the new same job.
         # That's why we should to find the first appropriate job and remove it from queue.
         def pop_perform_unlocked_from_queue(queue)
-          payload = Resque.data_store.everything_in_queue(queue).find(&method(:can_be_performed?))
+          payload = Resque.data_store
+                          .everything_in_queue(queue)
+                          .find(&method(:can_be_performed?)) || return
 
-          (payload && Resque::Job.new(queue, Resque.decode(payload)))
-            &.tap { |job| remove_job_from_queue(queue, job) }
+          Resque::Job.new(queue, Resque.decode(payload))
+                     .tap { |job| remove_job_from_queue(queue, job) }
         end
 
         def can_be_performed?(item)
@@ -94,7 +103,8 @@ module Resque
             json = Resque.decode(string)
             next unless json['class'] == klass
             # Resque destroys all jobs with the certain class if args is empty.
-            # That's why we should to check presence of args before comparing it with the args from redis
+            # That's why we should to check presence of args before comparing it with
+            # the args from redis
             next if args.any? && json['args'] != args
 
             unlock_queueing(queue, json)
@@ -128,7 +138,8 @@ module Resque
         end
 
         # Key from lib/resque/data_store.rb `#redis_key_from_queue` method
-        # If in further versions of resque key for queue will change - we should to change this method as well
+        # If in further versions of resque key for queue will change -
+        # we should to change this method as well
         def queue_key(queue)
           "queue:#{queue}"
         end
@@ -136,10 +147,12 @@ module Resque
 
       # Helper methods and callbacks for jobs
       module ClassMethods
-        # Callback which skip enqueue when job locked (returns false, resque skip enqueue step, when any from callbacks will return false)
+        # Callback which skip enqueue when job locked (returns false, resque skip enqueue step,
+        # when any from callbacks will return false)
         def before_enqueue_check_lock_availability(*args)
-          # Second condition handles the case when the job is already queueing (was allowed to put in queue at the moment of scheduling),
-          # and now scheduler moves it from future schedule to queue; if we'll not allow this, job will be lost.
+          # Second condition handles the case when the job is already queueing
+          # (was allowed to put in queue at the moment of scheduling), and now scheduler moves it
+          # from future schedule to queue; if we'll not allow this, job will be lost.
           Resque.inline? || call_from_scheduler? || job_available_for_queueing?(args)
         end
 
@@ -165,7 +178,8 @@ module Resque
           create_job(args).uniqueness.ensure_unlock_perform
         end
 
-        # Simply returns lock type of current job. If instance_variable `@lock_type` is not set, set it to default value
+        # Simply returns lock type of current job. If instance_variable `@lock_type` is not set,
+        # set it to default value
         def lock_type
           @lock_type ||= Resque::Plugins::Uniqueness.default_lock_type
           unless LOCKS.key?(@lock_type)
@@ -178,8 +192,10 @@ module Resque
         # Simple hack.
         # We don't need to skip enqueue step for jobs, which runned from scheduler.
         # Base flow for scheduled jobs:
-        #   Resque.enqueue_at -> Resque.enqueue_to (this step could be missed) -> Resque::Job.create -> Resque::Job#perform
-        # When we have an `until_executing` lock, and tryig to enqueue or create new same job, we just ignore this job.
+        #   Resque.enqueue_at -> Resque.enqueue_to (this step could be missed) ->
+        #   Resque::Job.create -> Resque::Job#perform
+        # When we have an `until_executing` lock, and tryig to enqueue or create new same job,
+        # we just ignore this job.
         # And in result we ignore jobs which are already locked and should be processed.
         # We can't schedule two same jobs with `until_executing` lock.
         # That's why we sure, that all jobs, which comes from scheduler, should be processed.

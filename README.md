@@ -1,4 +1,4 @@
-# Resque::Uniqueness\
+# Resque::Plugins::Uniqueness
 
 <!-- MarkdownTOC -->
 
@@ -19,14 +19,12 @@
 
 ## Introduction
 
-The goal of this gem is to ensure your Resque jobs are unique. We do this by creating unique keys in Redis based on how you configure uniqueness. This gem it's a resque-scheduler implementation of https://github.com/mhenrixon/sidekiq-unique-jobs/
+The goal of this gem is to ensure your Resque jobs are unique. We do this by creating unique keys in Redis based on how you configure uniqueness. This gem it's a resque implementation with resque-scheduler support of https://github.com/mhenrixon/sidekiq-unique-jobs/
 
 ## Requirements
 
 - Resque `~> 2.0.0`
-- Resque-scheduler `~> 4.0`
 - Ruby `>= 2.3`
-- Redis Server `>= 3.0.2`
 
 ## Installation
 
@@ -56,7 +54,7 @@ Resque::Uniqueness.default_lock_type = :while_executing
 ```
 By default all jobs have an `until_executing` lock type.
 
-### enabled
+### enable plugin
 
 ```ruby
 class TestWorker
