@@ -1,0 +1,14 @@
+inherit_from: ../.rubocop.yml
+
+RSpec/ImplicitSubject:
+  Enabled: false
+
+RSpec/EmptyExampleGroup:
+  CustomIncludeMethods:
+    - 'its_block'
+
+Metrics/BlockLength:
+  Enabled: false
+
+Metrics/LineLength:
+  Enabled: false

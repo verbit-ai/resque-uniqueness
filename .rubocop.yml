@@ -1,0 +1,18 @@
+require: rubocop-rspec
+
+AllCops:
+  Exclude:
+    - 'bin/*'
+Metrics/LineLength:
+  Max: 100
+  IgnoredPatterns:
+    - '\#.*' # ignore long comments
+
+Style/AndOr:
+  EnforcedStyle: conditionals
+
+Metrics/BlockLength:
+  Exclude: ['*.gemspec']
+
+Layout/SpaceInsideHashLiteralBraces:
+  EnforcedStyle: no_space

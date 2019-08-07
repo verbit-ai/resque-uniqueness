@@ -1,4 +1,11 @@
-source "https://rubygems.org"
+# frozen_string_literal: true
 
-# Specify your gem's dependencies in resque-scheduler-unique-jobs.gemspec
+source 'https://rubygems.org'
+
 gemspec
+
+group :development do
+  gem 'pry'
+  gem 'rubocop'
+  gem 'rubocop-rspec'
+end
