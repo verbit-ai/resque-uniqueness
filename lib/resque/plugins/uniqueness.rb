@@ -87,7 +87,7 @@ module Resque
         def pop_perform_unlocked_from_queue(queue)
           payload = Resque.data_store
                           .everything_in_queue(queue)
-                          .find(&method(:can_be_performed?)) || return
+                          .find(&method(:can_be_performed?)) or return
 
           Resque::Job.new(queue, Resque.decode(payload))
                      .tap { |job| remove_job_from_queue(queue, job) }

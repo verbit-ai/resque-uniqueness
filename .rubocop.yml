@@ -8,6 +8,9 @@ Metrics/LineLength:
   IgnoredPatterns:
     - '\#.*' # ignore long comments
 
+Style/AndOr:
+  EnforcedStyle: conditionals
+
 Metrics/BlockLength:
   Exclude: ['*.gemspec']
 
