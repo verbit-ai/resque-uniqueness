@@ -49,7 +49,6 @@ RSpec.describe Resque::Plugins::Uniqueness do
     let(:args) { ['queueing_locked'] }
 
     it { is_expected.to be false }
-    its_block { is_expected.not_to send_message(lock_instance, :try_lock_queueing) }
 
     context 'when resque inline' do
       around do |example|
@@ -59,14 +58,12 @@ RSpec.describe Resque::Plugins::Uniqueness do
       end
 
       it { is_expected.to be true }
-      its_block { is_expected.not_to send_message(lock_instance, :try_lock_queueing) }
     end
 
     context 'when job is not locked' do
       let(:args) { ['unlocked'] }
 
       it { is_expected.to be true }
-      its_block { is_expected.to send_message(lock_instance, :try_lock_queueing) }
     end
   end
 

@@ -10,9 +10,11 @@ require_relative 'uniqueness/until_executing'
 require_relative 'uniqueness/until_and_while_executing'
 require_relative 'uniqueness/job_extension'
 require_relative 'uniqueness/resque_extension'
+require_relative 'uniqueness/resque_scheduler_extension'
 
 Resque.prepend Resque::Plugins::Uniqueness::ResqueExtension
 Resque::Job.prepend Resque::Plugins::Uniqueness::JobExtension
+Resque.prepend Resque::Plugins::Uniqueness::ResqueSchedulerExtension
 
 module Resque
   module Plugins
@@ -160,17 +162,7 @@ module Resque
 
         # Callback which skip schedule when job is locked on queueing
         def before_schedule_check_lock_availability(*args)
-          return true if Resque.inline?
-
-          job_available_for_queueing?(args) or return false
-
-          create_job(args).uniqueness.try_lock_queueing
-          true
-        rescue LockingError
-          # In case when two threads locking the same job at the same moment -
-          # uniqueness will raise this error for one from them.
-          # In this case we should to return false
-          false
+          Resque.inline? || job_available_for_queueing?(args)
         end
 
         # Resque call this hook after performing
