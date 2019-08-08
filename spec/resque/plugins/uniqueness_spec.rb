@@ -44,11 +44,12 @@ RSpec.describe Resque::Plugins::Uniqueness do
   describe '.before_schedule_check_lock_availability' do
     subject { instance.before_schedule_check_lock_availability(*args) }
 
-    include_context 'with lock', :queueing_locked
+    include_context 'with lock', :queueing_locked, :try_lock_queueing
     let(:lock_class) { Resque::Plugins::Uniqueness::UntilExecuting }
     let(:args) { ['queueing_locked'] }
 
     it { is_expected.to be false }
+    its_block { is_expected.not_to send_message(lock_instance, :try_lock_queueing) }
 
     context 'when resque inline' do
       around do |example|
@@ -58,32 +59,14 @@ RSpec.describe Resque::Plugins::Uniqueness do
       end
 
       it { is_expected.to be true }
+      its_block { is_expected.not_to send_message(lock_instance, :try_lock_queueing) }
     end
 
     context 'when job is not locked' do
       let(:args) { ['unlocked'] }
 
       it { is_expected.to be true }
-    end
-  end
-
-  describe '.after_schedule_try_lock_queueing' do
-    subject { instance.after_schedule_try_lock_queueing(*args) }
-
-    include_context 'with lock', :try_lock_queueing
-    let(:lock_class) { Resque::Plugins::Uniqueness::UntilExecuting }
-    let(:args) { [] }
-
-    its_block { is_expected.to send_message(lock_instance, :try_lock_queueing) }
-
-    context 'when Resque inline' do
-      around do |example|
-        Resque.inline = true
-        example.run
-        Resque.inline = false
-      end
-
-      its_block { is_expected.not_to send_message(lock_instance, :try_lock_queueing) }
+      its_block { is_expected.to send_message(lock_instance, :try_lock_queueing) }
     end
   end
 
