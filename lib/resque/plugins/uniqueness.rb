@@ -81,20 +81,22 @@ module Resque
         end
 
         # Resque uses `Resque.pop(queue)` for retrieving jobs from queue, but in case when we have
-        # while_executing lock we should to wait when the same job will finish, before we pop
-        # the new same job.
-        # That's why we should to find the first appropriate job and remove it from queue.
-        def pop_perform_unlocked_from_queue(queue)
-          payload = Resque.data_store
-                          .everything_in_queue(queue)
-                          .find(&method(:can_be_performed?)) or return
+        # while_executing lock we should to be sure that we popped unlocked job.
+        # That's why we should to check lock of popped job, and if its locked - push it back.
+        def pop_perform_unlocked(queue)
+          item = Resque.pop(queue) or return
 
-          Resque::Job.new(queue, Resque.decode(payload))
-                     .tap { |job| remove_job_from_queue(queue, job) }
+          job = Resque::Job.new(queue, item)
+          if job.uniqueness.perform_locked?
+            push(queue, item)
+            nil
+          else
+            job
+          end
         end
 
-        def can_be_performed?(item)
-          !Resque::Job.new(nil, Resque.decode(item)).uniqueness.perform_locked?
+        def push(queue, item)
+          Resque.push(queue, item)
         end
 
         def destroy(queue, klass, *args)
@@ -129,13 +131,13 @@ module Resque
           LOCKS[lock_key].new(job)
         end
 
-        private
-
         def remove_job_from_queue(queue, job)
           return false unless job
 
           job.redis.lrem(queue_key(queue), 1, Resque.encode(job.payload))
         end
+
+        private
 
         # Key from lib/resque/data_store.rb `#redis_key_from_queue` method
         # If in further versions of resque key for queue will change -
@@ -158,14 +160,17 @@ module Resque
 
         # Callback which skip schedule when job is locked on queueing
         def before_schedule_check_lock_availability(*args)
-          Resque.inline? || job_available_for_queueing?(args)
-        end
-
-        # Callback which lock job on queueing if this job should be locked
-        def after_schedule_try_lock_queueing(*args)
           return true if Resque.inline?
 
+          job_available_for_queueing?(args) or return false
+
           create_job(args).uniqueness.try_lock_queueing
+          true
+        rescue LockingError
+          # In case when two threads locking the same job at the same moment -
+          # uniqueness will raise this error for one from them.
+          # In this case we should to return false
+          false
         end
 
         # Resque call this hook after performing

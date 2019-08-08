@@ -27,6 +27,11 @@ module Resque
 
             job.uniqueness.try_lock_queueing
             super
+          rescue LockingError
+            # In case when two threads locking the same job at the same moment -
+            # uniqueness will raise this error for one from them.
+            # In this case we should to return nil
+            nil
           end
 
           # Resque call this method, when starting to process job
@@ -35,13 +40,19 @@ module Resque
           def reserve(queue)
             return super if Resque.inline?
 
-            job = Resque::Plugins::Uniqueness.pop_perform_unlocked_from_queue(queue)
+            job = Resque::Plugins::Uniqueness.pop_perform_unlocked(queue)
 
             return unless job
 
             job.uniqueness.ensure_unlock_queueing
             job.uniqueness.try_lock_perform
             job
+          rescue LockingError
+            # In case when two threads pick up the same job, which don't locked yet,
+            # one from them will fail with `LockingError`
+            # And in this case we should to push job back
+            Resque::Plugins::Uniqueness.push(queue, job.payload)
+            nil
           end
 
           # Destroy with jobs their queueing locks

@@ -169,8 +169,8 @@ RSpec.describe Resque::Plugins::Uniqueness do
 
   ### Specs for class methods
 
-  describe '.pop_perform_unlocked_from_queue' do
-    subject(:unlocked_job) { described_class.pop_perform_unlocked_from_queue(queue) }
+  describe '.pop_perform_unlocked' do
+    subject(:unlocked_job) { described_class.pop_perform_unlocked(queue) }
 
     include_context 'with lock', :perform_locked
     let(:lock_class) { Resque::Plugins::Uniqueness::WhileExecuting }
@@ -192,27 +192,6 @@ RSpec.describe Resque::Plugins::Uniqueness do
     it 'returns correct job and remove it from redis list', :aggregate_failures do
       expect(unlocked_job).to eq Resque::Job.new(queue, Resque.decode(encoded_jobs.last))
       expect(Resque.redis.lrange(queue_key, 0, -1)).to match_array encoded_jobs[0..-2]
-    end
-  end
-
-  describe '.unperform_unlocked?' do
-    subject { described_class.can_be_performed?(encoded_job) }
-
-    include_context 'with lock', :perform_locked
-    let(:lock_class) { Resque::Plugins::Uniqueness::WhileExecuting }
-    let(:job) { {class: WhileExecutingWorker, args: job_args} }
-    let(:encoded_job) { Resque.encode(job) }
-
-    context 'when job is locked' do
-      let(:job_args) { [:perform_locked] }
-
-      it { is_expected.to be false }
-    end
-
-    context 'when job is unlocked' do
-      let(:job_args) { [:unlocked] }
-
-      it { is_expected.to be true }
     end
   end
 
