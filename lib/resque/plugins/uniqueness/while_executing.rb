@@ -29,7 +29,6 @@ module Resque
 
         def lock_perform
           value_before = redis.getset(redis_key, 1)
-          value_before = 1
 
           # If value before is postive, than lock already present
           raise LockingError, 'Job is already locked on perform' if value_before.to_i.positive?
