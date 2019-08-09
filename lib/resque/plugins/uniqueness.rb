@@ -71,17 +71,6 @@ module Resque
           base.extend ClassMethods
         end
 
-        # Remove all performing keys from redis.
-        # Using to fix unexpected terminated problem.
-        def clear_performing_locks
-          cursor = '0'
-          loop do
-            cursor, keys = Resque.redis.scan(cursor, match: "#{WhileExecuting::PREFIX}:#{REDIS_KEY_PREFIX}:*")
-            Resque.redis.del(*keys) if keys.any?
-            break if cursor.to_i.zero?
-          end
-        end
-
         # Resque uses `Resque.pop(queue)` for retrieving jobs from queue, but in case when we have
         # while_executing lock we should to be sure that we popped unlocked job.
         # That's why we should to check lock of popped job, and if its locked - push it back.
@@ -213,6 +202,3 @@ module Resque
     end
   end
 end
-
-# Clear all performing locks from redis (could be present because of unexpected terminated)
-Resque::Plugins::Uniqueness.clear_performing_locks

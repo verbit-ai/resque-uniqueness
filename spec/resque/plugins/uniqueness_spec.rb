@@ -255,22 +255,4 @@ RSpec.describe Resque::Plugins::Uniqueness do
       its_block { is_expected.to send_message(lock_instance, :ensure_unlock_queueing).once }
     end
   end
-
-  describe '.clear_performing_locks' do
-    subject(:call) { described_class.clear_performing_locks }
-
-    before do
-      stub_const('Resque::Plugins::Uniqueness::WhileExecuting::PREFIX', 'performing')
-      stub_const('Resque::Plugins::Uniqueness::REDIS_KEY_PREFIX', 'redis_key_prefix')
-
-      5.times { Resque.redis.incr("#{key_prefix}#{SecureRandom.uuid}") }
-    end
-
-    let(:key_prefix) { "#{Resque::Plugins::Uniqueness::WhileExecuting::PREFIX}:#{Resque::Plugins::Uniqueness::REDIS_KEY_PREFIX}:" }
-
-    it 'not include any performing keys' do
-      call
-      expect(Resque.redis.keys).not_to include(/#{key_prefix}/)
-    end
-  end
 end
