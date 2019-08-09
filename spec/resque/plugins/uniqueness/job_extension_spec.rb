@@ -59,7 +59,7 @@ RSpec.describe Resque::Plugins::Uniqueness::JobExtension do
     let(:job_payload) { {'class' => UntilAndWhileExecutingWorker, 'args' => args} }
     let(:args) { [] }
 
-    before { allow(Resque::Plugins::Uniqueness).to receive(:pop_perform_unlocked_from_queue).and_return(job) }
+    before { allow(Resque::Plugins::Uniqueness).to receive(:pop_perform_unlocked).and_return(job) }
 
     its_block { is_expected.to send_message(lock_instance, :ensure_unlock_queueing) }
     its_block { is_expected.to send_message(lock_instance, :try_lock_perform) }

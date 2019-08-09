@@ -10,9 +10,11 @@ require_relative 'uniqueness/until_executing'
 require_relative 'uniqueness/until_and_while_executing'
 require_relative 'uniqueness/job_extension'
 require_relative 'uniqueness/resque_extension'
+require_relative 'uniqueness/resque_scheduler_extension'
 
 Resque.prepend Resque::Plugins::Uniqueness::ResqueExtension
 Resque::Job.prepend Resque::Plugins::Uniqueness::JobExtension
+Resque.prepend Resque::Plugins::Uniqueness::ResqueSchedulerExtension
 
 module Resque
   module Plugins
@@ -69,32 +71,23 @@ module Resque
           base.extend ClassMethods
         end
 
-        # Remove all performing keys from redis.
-        # Using to fix unexpected terminated problem.
-        def clear_performing_locks
-          cursor = '0'
-          loop do
-            cursor, keys = Resque.redis.scan(cursor, match: "#{WhileExecuting::PREFIX}:#{REDIS_KEY_PREFIX}:*")
-            Resque.redis.del(*keys) if keys.any?
-            break if cursor.to_i.zero?
+        # Resque uses `Resque.pop(queue)` for retrieving jobs from queue, but in case when we have
+        # while_executing lock we should to be sure that we popped unlocked job.
+        # That's why we should to check lock of popped job, and if its locked - push it back.
+        def pop_perform_unlocked(queue)
+          item = Resque.pop(queue) or return
+
+          job = Resque::Job.new(queue, item)
+          if job.uniqueness.perform_locked?
+            push(queue, item)
+            nil
+          else
+            job
           end
         end
 
-        # Resque uses `Resque.pop(queue)` for retrieving jobs from queue, but in case when we have
-        # while_executing lock we should to wait when the same job will finish, before we pop
-        # the new same job.
-        # That's why we should to find the first appropriate job and remove it from queue.
-        def pop_perform_unlocked_from_queue(queue)
-          payload = Resque.data_store
-                          .everything_in_queue(queue)
-                          .find(&method(:can_be_performed?)) or return
-
-          Resque::Job.new(queue, Resque.decode(payload))
-                     .tap { |job| remove_job_from_queue(queue, job) }
-        end
-
-        def can_be_performed?(item)
-          !Resque::Job.new(nil, Resque.decode(item)).uniqueness.perform_locked?
+        def push(queue, item)
+          Resque.push(queue, item)
         end
 
         def destroy(queue, klass, *args)
@@ -129,13 +122,13 @@ module Resque
           LOCKS[lock_key].new(job)
         end
 
-        private
-
         def remove_job_from_queue(queue, job)
           return false unless job
 
           job.redis.lrem(queue_key(queue), 1, Resque.encode(job.payload))
         end
+
+        private
 
         # Key from lib/resque/data_store.rb `#redis_key_from_queue` method
         # If in further versions of resque key for queue will change -
@@ -159,13 +152,6 @@ module Resque
         # Callback which skip schedule when job is locked on queueing
         def before_schedule_check_lock_availability(*args)
           Resque.inline? || job_available_for_queueing?(args)
-        end
-
-        # Callback which lock job on queueing if this job should be locked
-        def after_schedule_try_lock_queueing(*args)
-          return true if Resque.inline?
-
-          create_job(args).uniqueness.try_lock_queueing
         end
 
         # Resque call this hook after performing
@@ -216,6 +202,3 @@ module Resque
     end
   end
 end
-
-# Clear all performing locks from redis (could be present because of unexpected terminated)
-Resque::Plugins::Uniqueness.clear_performing_locks

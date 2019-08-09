@@ -27,6 +27,14 @@ module Resque
 
             job.uniqueness.try_lock_queueing
             super
+          rescue LockingError => e
+            # In case when two threads locking the same job at the same moment -
+            # uniqueness will raise this error for one from them.
+            # In this case we should to return nil, but if parent method can handle error -
+            # we should to throw it to the parent for preventing to run after hooks.
+            raise if parent_handle_locking_error?(e)
+
+            nil
           end
 
           # Resque call this method, when starting to process job
@@ -35,13 +43,19 @@ module Resque
           def reserve(queue)
             return super if Resque.inline?
 
-            job = Resque::Plugins::Uniqueness.pop_perform_unlocked_from_queue(queue)
+            job = Resque::Plugins::Uniqueness.pop_perform_unlocked(queue)
 
             return unless job
 
             job.uniqueness.ensure_unlock_queueing
             job.uniqueness.try_lock_perform
             job
+          rescue LockingError
+            # In case when two threads pick up the same job, which don't locked yet,
+            # one from them will fail with `LockingError`
+            # And in this case we should to push job back
+            Resque::Plugins::Uniqueness.push(queue, job.payload)
+            nil
           end
 
           # Destroy with jobs their queueing locks
@@ -54,6 +68,14 @@ module Resque
 
         def uniqueness
           @uniqueness ||= Resque::Plugins::Uniqueness.fetch_for(self)
+        end
+
+        # For now only `Resque.enqueue_to` can and should handle LockingError exception.
+        # In case when we don't handle it there - we will run after hooks for job,
+        # which don't queued
+        # We handle this exception in Resque::Plugins::Uniqueness::ResqueExtension.enqueue_to method
+        def parent_handle_locking_error?(error)
+          error.backtrace.any? { |trace| trace =~ /resque\.rb.*`enqueue_to/ }
         end
       end
     end

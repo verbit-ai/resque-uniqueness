@@ -44,7 +44,7 @@ RSpec.describe Resque::Plugins::Uniqueness do
   describe '.before_schedule_check_lock_availability' do
     subject { instance.before_schedule_check_lock_availability(*args) }
 
-    include_context 'with lock', :queueing_locked
+    include_context 'with lock', :queueing_locked, :try_lock_queueing
     let(:lock_class) { Resque::Plugins::Uniqueness::UntilExecuting }
     let(:args) { ['queueing_locked'] }
 
@@ -64,26 +64,6 @@ RSpec.describe Resque::Plugins::Uniqueness do
       let(:args) { ['unlocked'] }
 
       it { is_expected.to be true }
-    end
-  end
-
-  describe '.after_schedule_try_lock_queueing' do
-    subject { instance.after_schedule_try_lock_queueing(*args) }
-
-    include_context 'with lock', :try_lock_queueing
-    let(:lock_class) { Resque::Plugins::Uniqueness::UntilExecuting }
-    let(:args) { [] }
-
-    its_block { is_expected.to send_message(lock_instance, :try_lock_queueing) }
-
-    context 'when Resque inline' do
-      around do |example|
-        Resque.inline = true
-        example.run
-        Resque.inline = false
-      end
-
-      its_block { is_expected.not_to send_message(lock_instance, :try_lock_queueing) }
     end
   end
 
@@ -169,8 +149,8 @@ RSpec.describe Resque::Plugins::Uniqueness do
 
   ### Specs for class methods
 
-  describe '.pop_perform_unlocked_from_queue' do
-    subject(:unlocked_job) { described_class.pop_perform_unlocked_from_queue(queue) }
+  describe '.pop_perform_unlocked' do
+    subject(:unlocked_job) { described_class.pop_perform_unlocked(queue) }
 
     include_context 'with lock', :perform_locked
     let(:lock_class) { Resque::Plugins::Uniqueness::WhileExecuting }
@@ -192,27 +172,6 @@ RSpec.describe Resque::Plugins::Uniqueness do
     it 'returns correct job and remove it from redis list', :aggregate_failures do
       expect(unlocked_job).to eq Resque::Job.new(queue, Resque.decode(encoded_jobs.last))
       expect(Resque.redis.lrange(queue_key, 0, -1)).to match_array encoded_jobs[0..-2]
-    end
-  end
-
-  describe '.unperform_unlocked?' do
-    subject { described_class.can_be_performed?(encoded_job) }
-
-    include_context 'with lock', :perform_locked
-    let(:lock_class) { Resque::Plugins::Uniqueness::WhileExecuting }
-    let(:job) { {class: WhileExecutingWorker, args: job_args} }
-    let(:encoded_job) { Resque.encode(job) }
-
-    context 'when job is locked' do
-      let(:job_args) { [:perform_locked] }
-
-      it { is_expected.to be false }
-    end
-
-    context 'when job is unlocked' do
-      let(:job_args) { [:unlocked] }
-
-      it { is_expected.to be true }
     end
   end
 
@@ -294,24 +253,6 @@ RSpec.describe Resque::Plugins::Uniqueness do
       end
 
       its_block { is_expected.to send_message(lock_instance, :ensure_unlock_queueing).once }
-    end
-  end
-
-  describe '.clear_performing_locks' do
-    subject(:call) { described_class.clear_performing_locks }
-
-    before do
-      stub_const('Resque::Plugins::Uniqueness::WhileExecuting::PREFIX', 'performing')
-      stub_const('Resque::Plugins::Uniqueness::REDIS_KEY_PREFIX', 'redis_key_prefix')
-
-      5.times { Resque.redis.incr("#{key_prefix}#{SecureRandom.uuid}") }
-    end
-
-    let(:key_prefix) { "#{Resque::Plugins::Uniqueness::WhileExecuting::PREFIX}:#{Resque::Plugins::Uniqueness::REDIS_KEY_PREFIX}:" }
-
-    it 'not include any performing keys' do
-      call
-      expect(Resque.redis.keys).not_to include(/#{key_prefix}/)
     end
   end
 end
