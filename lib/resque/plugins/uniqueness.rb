@@ -71,15 +71,6 @@ module Resque
           base.extend ClassMethods
         end
 
-        # We should to handle exception here to prevent run after hooks.
-        # Read more info `Resque::Plugins::Uniqueness::JobExtension.create` and
-        # and `Resque::Plugins::Uniqueness::JobExtension.parent_handle_locking_error?`
-        def enqueue_to(queue, klass, *args)
-          super
-        rescue LockingError
-          nil
-        end
-
         # Resque uses `Resque.pop(queue)` for retrieving jobs from queue, but in case when we have
         # while_executing lock we should to be sure that we popped unlocked job.
         # That's why we should to check lock of popped job, and if its locked - push it back.

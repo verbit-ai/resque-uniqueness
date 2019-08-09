@@ -13,6 +13,15 @@ module Resque
 
         # Class methods for override base Resque module
         module ClassMethods
+          # We should to handle exception here to prevent run after hooks.
+          # Read more info `Resque::Plugins::Uniqueness::JobExtension.create` and
+          # and `Resque::Plugins::Uniqueness::JobExtension.parent_handle_locking_error?`
+          def enqueue_to(queue, klass, *args)
+            super
+          rescue LockingError
+            nil
+          end
+
           def remove_queue(queue)
             super.tap { Resque::Plugins::Uniqueness.remove_queue(queue) unless Resque.inline? }
           end
