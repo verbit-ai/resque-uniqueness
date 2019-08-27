@@ -19,7 +19,7 @@ module Resque
           # We should to ignore locking when this method call from scheduler.
           # More information read in the description of `lib.resque_ext/plugin/scheduler_unique_job.rb#call_from_scheduler?` method
           def create(queue, klass, *args)
-            return super if Resque.inline? || klass.call_from_scheduler?
+            return super if skip_uniqueness_on_create?(klass)
 
             job = new(queue, 'class' => klass.to_s, 'args' => decode(encode(args)))
 
@@ -63,6 +63,14 @@ module Resque
             super.tap do
               Resque::Plugins::Uniqueness.destroy(queue, klass, *args) unless Resque.inline?
             end
+          end
+
+          private
+
+          def skip_uniqueness_on_create?(klass)
+            Resque.inline? ||
+              !Resque::Plugins::Uniqueness.enabled_for?(klass) ||
+              klass.call_from_scheduler? # klass will contain this method if plugin enabled
           end
         end
 

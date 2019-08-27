@@ -128,6 +128,10 @@ module Resque
           job.redis.lrem(queue_key(queue), 1, Resque.encode(job.payload))
         end
 
+        def enabled_for?(klass)
+          klass.included_modules.include?(self)
+        end
+
         private
 
         # Key from lib/resque/data_store.rb `#redis_key_from_queue` method

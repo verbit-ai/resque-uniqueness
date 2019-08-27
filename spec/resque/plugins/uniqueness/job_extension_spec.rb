@@ -34,6 +34,20 @@ RSpec.describe Resque::Plugins::Uniqueness::JobExtension do
       its_block { is_expected.not_to send_message(lock_instance, :try_lock_queueing) }
     end
 
+    context 'when class not include plugin' do
+      let(:klass) do
+        class WithoutUniquenessPluginWorker
+          def self.perform; end
+        end
+        WithoutUniquenessPluginWorker
+      end
+
+      before { allow(Resque).to receive(:new) }
+
+      its_block { is_expected.to send_message(Resque, :push) }
+      its_block { is_expected.not_to send_message(lock_instance, :try_lock_queueing) }
+    end
+
     context 'when called from scheduler' do
       before { allow(klass).to receive(:call_from_scheduler?).and_return(true) }
 
