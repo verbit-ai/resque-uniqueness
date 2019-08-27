@@ -255,4 +255,25 @@ RSpec.describe Resque::Plugins::Uniqueness do
       its_block { is_expected.to send_message(lock_instance, :ensure_unlock_queueing).once }
     end
   end
+
+  describe '.enabled_for?' do
+    subject { described_class.enabled_for?(klass) }
+
+    context 'when klass include plugin' do
+      let(:klass) { UntilExecutingWorker }
+
+      it { is_expected.to be true }
+    end
+
+    context 'when klass not include plugin' do
+      let(:klass) do
+        class WorkerWithoutPlugin
+          def self.perform; end
+        end
+        WorkerWithoutPlugin
+      end
+
+      it { is_expected.to be false }
+    end
+  end
 end
