@@ -21,3 +21,5 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 end
+
+RSpec::Matchers.define_negated_matcher :not_to_send_message, :send_message

@@ -61,6 +61,27 @@ RSpec.describe Resque::Plugins::Uniqueness::JobExtension do
       its_block { is_expected.not_to send_message(Resque, :push).with(queue, class: klass.to_s, args: args) }
       its_block { is_expected.not_to send_message(lock_instance, :try_lock_queueing) }
     end
+
+    context 'when queue missed in worker' do
+      let(:klass) { Class.new(TestWorker) }
+      let(:queue) {}
+
+      its_block do
+        is_expected.to raise_error(Resque::NoQueueError)
+          .and(not_to_send_message(Resque, :push))
+          .and(not_to_send_message(lock_instance, :try_lock_queueing))
+      end
+    end
+
+    context 'when klass is empty' do
+      let(:klass) { '' }
+
+      its_block do
+        is_expected.to raise_error(Resque::NoClassError)
+          .and(not_to_send_message(Resque, :push))
+          .and(not_to_send_message(lock_instance, :try_lock_queueing))
+      end
+    end
   end
 
   describe '.reserve' do

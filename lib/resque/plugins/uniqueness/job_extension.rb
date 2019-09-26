@@ -19,6 +19,10 @@ module Resque
           # We should to ignore locking when this method call from scheduler.
           # More information read in the description of `lib.resque_ext/plugin/scheduler_unique_job.rb#call_from_scheduler?` method
           def create(queue, klass, *args)
+            # This validate also present in super version of this method, but for be sure
+            # that we don't to lock unvalid jobs, we duplicate this validation here
+            Resque.validate(klass, queue)
+
             return super if skip_uniqueness_on_create?(klass)
 
             job = new(queue, 'class' => klass.to_s, 'args' => decode(encode(args)))
