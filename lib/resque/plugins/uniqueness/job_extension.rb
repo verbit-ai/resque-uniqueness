@@ -52,6 +52,10 @@ module Resque
             return unless job
 
             job.uniqueness.ensure_unlock_queueing
+            # FIXME: we release lock on queueing and when we push job back to queue (on locking error)
+            # we don't set this lock again.
+            # This bug shouldn't be reproducable beacuase it works only for `until_and_while_executing` lock type,
+            # and in this case we couldn't have two same jobs in queue, but we should to take care on it
             job.uniqueness.try_lock_perform
             job
           rescue LockingError

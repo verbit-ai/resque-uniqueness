@@ -70,6 +70,10 @@ module Resque
         def redis_key
           "#{self.class::PREFIX}:#{REDIS_KEY_PREFIX}:#{Resque.encode(job.payload)}"
         end
+
+        def log(message)
+          Resque.logger.info("#{message} for #{job.payload['class']} with #{job.payload['args']}")
+        end
       end
     end
   end
