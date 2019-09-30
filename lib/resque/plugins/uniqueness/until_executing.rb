@@ -24,13 +24,18 @@ module Resque
 
         def lock_queueing
           value_before = redis.getset(redis_key, 1)
+          log('Queueing locked')
 
           # If value before is postive, than lock already present
-          raise LockingError, 'Job is already locked on queueing' if value_before.to_i.positive?
+          return unless value_before.to_i.positive?
+
+          log('Queueing locking error')
+          raise LockingError, 'Job is already locked on queueing'
         end
 
         def unlock_queueing
           redis.del(redis_key)
+          log('Queueing unlocked')
         end
 
         def already_queueing?

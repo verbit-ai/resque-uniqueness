@@ -10,5 +10,6 @@ require 'resque/plugins/uniqueness'
 # require "pry"
 # Pry.start
 
-require 'irb'
-IRB.start(__FILE__)
+require 'pry'
+require_relative '../spec/spec_helper'
+Pry.start
