@@ -63,4 +63,14 @@ RSpec.describe Resque::Plugins::Uniqueness::WhileExecuting do
       end
     end
   end
+
+  describe '#redis_key' do
+    subject { redis_key }
+
+    let(:job) { Resque::Job.new(nil, 'class' => klass, 'args' => [], 'queue' => 'test_queue') }
+
+    it 'not to save queue' do
+      is_expected.not_to match(/test_queue/)
+    end
+  end
 end
