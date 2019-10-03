@@ -190,6 +190,8 @@ module Resque
         # We can't schedule two same jobs with `until_executing` lock.
         # That's why we sure, that all jobs, which comes from scheduler, should be processed.
         def call_from_scheduler?
+          # This path is from the `resque-scheduler` gem
+          # Its not related to resque-uniqueness.
           caller.grep(%r{lib/resque/scheduler\.rb.*enqueue}).any?
         end
 
