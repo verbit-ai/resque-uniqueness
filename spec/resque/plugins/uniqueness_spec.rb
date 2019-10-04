@@ -79,7 +79,7 @@ RSpec.describe Resque::Plugins::Uniqueness do
   end
 
   describe '.on_failure_check_unique_lock' do
-    subject { instance.on_failure_check_unique_lock(*args) }
+    subject { instance.on_failure_check_unique_lock(RuntimeError.new, *args) }
 
     include_context 'with lock', :ensure_unlock_perform
     let(:instance) { WhileExecutingWorker }
