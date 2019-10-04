@@ -164,7 +164,7 @@ module Resque
         end
 
         # when perform fails Resque call this hook
-        def on_failure_check_unique_lock(*args)
+        def on_failure_check_unique_lock(_error, *args)
           create_job(args).uniqueness.ensure_unlock_perform
         end
 

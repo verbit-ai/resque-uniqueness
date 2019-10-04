@@ -12,6 +12,7 @@ class TestWorker
   def self.perform(*args)
     before_processing(args)
     sleep 1
+    yield if block_given?
   ensure
     after_processing(args)
   end
@@ -46,6 +47,17 @@ class WhileExecutingWorker < TestWorker
   @queue = :test_job
 end
 
+class WhileExecutingPerformErrorWorker < TestWorker
+  @lock_type = :while_executing
+  @queue = :test_job
+
+  def self.perform(*args)
+    super do
+      raise 'test error'
+    end
+  end
+end
+
 class UntilExecutingWorker < TestWorker
   @lock_type = :until_executing
   @queue = :test_job
@@ -56,10 +68,21 @@ class UntilAndWhileExecutingWorker < TestWorker
   @queue = :test_job
 
   def self.perform(*args)
-    before_processing(args)
-    sleep 5
-  ensure
-    after_processing(args)
+    super do
+      sleep 4
+    end
+  end
+end
+
+class UntilAndWhileExecutingPerformErrorWorker < TestWorker
+  @lock_type = :until_and_while_executing
+  @queue = :test_job
+
+  def self.perform(*args)
+    super do
+      sleep 4
+      raise 'test error'
+    end
   end
 end
 
