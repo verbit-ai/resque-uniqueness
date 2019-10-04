@@ -43,6 +43,12 @@ RSpec.describe Resque::Plugins::Uniqueness do
     end
 
     it { is_expected.to eq output_result }
+
+    context 'when raise error on perform' do
+      let(:worker_class) { WhileExecutingPerformErrorWorker }
+
+      it { is_expected.to eq output_result }
+    end
   end
 
   describe 'until_executing' do
@@ -77,6 +83,12 @@ RSpec.describe Resque::Plugins::Uniqueness do
     end
 
     it { is_expected.to eq output_result }
+
+    context 'when raise error on perform' do
+      let(:worker_class) { UntilAndWhileExecutingPerformErrorWorker }
+
+      it { is_expected.to eq output_result }
+    end
   end
 
   def workers_waiter

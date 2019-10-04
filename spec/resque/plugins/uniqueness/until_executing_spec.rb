@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe Resque::Plugins::Uniqueness::UntilExecuting do
-  let(:job) { Resque::Job.new(nil, 'class' => klass, args: []) }
+  let(:job) { Resque::Job.new(nil, 'class' => klass, 'args' => []) }
   let(:lock_instance) { described_class.new(job) }
   let(:redis_key) { lock_instance.send(:redis_key) }
   let(:klass) { UntilExecutingWorker }
@@ -61,6 +61,16 @@ RSpec.describe Resque::Plugins::Uniqueness::UntilExecuting do
         call
         expect(Resque.redis.get(redis_key)).to be_nil
       end
+    end
+  end
+
+  describe '#redis_key' do
+    subject { redis_key }
+
+    let(:job) { Resque::Job.new(nil, 'class' => klass, 'args' => [], 'queue' => 'test_queue') }
+
+    it 'not to save queue' do
+      is_expected.not_to match(/test_queue/)
     end
   end
 end
