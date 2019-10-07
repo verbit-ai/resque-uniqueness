@@ -189,10 +189,12 @@ module Resque
         # And in result we ignore jobs which are already locked and should be processed.
         # We can't schedule two same jobs with `until_executing` lock.
         # That's why we sure, that all jobs, which comes from scheduler, should be processed.
+        # However enqueue_to method also calls from rufus scheduled jobs, that's why we should to check
+        # method which is specific only for delaying schedule process. This is `enqueue_next_item`
         def call_from_scheduler?
           # This path is from the `resque-scheduler` gem
           # Its not related to resque-uniqueness.
-          caller.grep(%r{lib/resque/scheduler\.rb.*enqueue}).any?
+          caller.grep(%r{lib/resque/scheduler\.rb.*enqueue_next_item}).any?
         end
 
         private

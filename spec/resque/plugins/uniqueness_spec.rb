@@ -29,7 +29,7 @@ RSpec.describe Resque::Plugins::Uniqueness do
     end
 
     context 'when call from scheduler' do
-      before { allow(UntilExecutingWorker).to receive(:caller).and_return(['lib/resque/scheduler.rb:248 #enqueue']) }
+      before { allow(UntilExecutingWorker).to receive(:caller).and_return(['lib/resque/scheduler.rb:248 #enqueue_next_item']) }
 
       it { is_expected.to be true }
     end
@@ -135,7 +135,7 @@ RSpec.describe Resque::Plugins::Uniqueness do
     before { allow(TestWorker).to receive(:caller).and_return(caller_result) }
 
     context 'when caller backtrace include scheduler enqueue method' do
-      let(:caller_result) { ['lib/resque/scheduler.rb:248 #enqueue'] }
+      let(:caller_result) { ['lib/resque/scheduler.rb:248 #enqueue_next_item'] }
 
       it { is_expected.to be true }
     end
