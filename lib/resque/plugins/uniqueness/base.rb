@@ -72,7 +72,7 @@ module Resque
         end
 
         def log(message)
-          Resque.logger.info("#{message} for #{job.payload['class']} with #{job.payload['args']}")
+          Resque.logger.info("#{message} for key: #{redis_key}")
         end
       end
     end
