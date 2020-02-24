@@ -67,10 +67,11 @@ module Resque
           end
 
           # Destroy with jobs their queueing locks
+          # TODO: move logic of releasing locks into Resque::DataStore::QueueAccess#remove_from_queue method
           def destroy(queue, klass, *args)
-            super.tap do
-              Resque::Plugins::Uniqueness.destroy(queue, klass, *args) unless Resque.inline?
-            end
+            Resque::Plugins::Uniqueness.destroy(queue, klass, *args) unless Resque.inline?
+
+            super
           end
 
           private
