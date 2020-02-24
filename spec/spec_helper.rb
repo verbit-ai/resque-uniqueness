@@ -20,6 +20,11 @@ RSpec.configure do |config|
   config.expect_with :rspec do |c|
     c.syntax = :expect
   end
+
+  # remove all locks
+  config.after do
+    Resque.redis.del(TestWorker::REDIS_KEY, *Resque.redis.keys('*:resque_uniqueness:*'))
+  end
 end
 
 RSpec::Matchers.define_negated_matcher :not_to_send_message, :send_message
