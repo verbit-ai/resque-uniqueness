@@ -33,7 +33,7 @@ GEM
     rack-protection (2.0.5)
       rack
     rainbow (3.0.0)
-    rake (10.5.0)
+    rake (12.3.3)
     redis (4.1.2)
     redis-namespace (1.6.0)
       redis (>= 3.0.4)
@@ -95,7 +95,7 @@ PLATFORMS
 DEPENDENCIES
   bundler (~> 2.0)
   pry
-  rake (~> 10.0)
+  rake (~> 12.3)
   resque-uniqueness!
   rspec (~> 3.0)
   rspec-its
