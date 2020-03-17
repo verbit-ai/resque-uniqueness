@@ -86,6 +86,15 @@ class UntilAndWhileExecutingPerformErrorWorker < TestWorker
   end
 end
 
+class UntilExecutingWithUniqueArgsWorker < TestWorker
+  @queue = :test_job
+  @lock_type = :until_executing
+
+  def self.unique_args(first, *)
+    [first]
+  end
+end
+
 class NoneWorker < TestWorker
   @lock_type = :none
   @queue = :test_job

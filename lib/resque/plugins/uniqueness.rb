@@ -144,6 +144,11 @@ module Resque
 
       # Helper methods and callbacks for jobs
       module ClassMethods
+        # Filters args which should be unique
+        def unique_args(*args)
+          args
+        end
+
         # Callback which skip enqueue when job locked (returns false, resque skip enqueue step,
         # when any from callbacks will return false)
         def before_enqueue_check_lock_availability(*args)
