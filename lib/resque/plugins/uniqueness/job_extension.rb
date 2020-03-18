@@ -18,7 +18,12 @@ module Resque
           # Call before Resque put job into queue
           # We should to ignore locking when this method call from scheduler.
           # More information read in the description of `lib.resque_ext/plugin/scheduler_unique_job.rb#call_from_scheduler?` method
-          def create(queue, klass, *args)
+          def create(queue, klass, *args) # rubocop:disable Metrics/AbcSize [15.17/15]
+            # In some cases this method could to receive string instead of class.
+            # For example in Resque::Scheduler plugin, `enqueue_from_config` method
+            # after rescue exception
+            klass = Resque.constantize(klass) if klass.instance_of?(String)
+
             # This validate also present in super version of this method, but for be sure
             # that we don't to lock unvalid jobs, we duplicate this validation here
             Resque.validate(klass, queue)

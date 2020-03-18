@@ -2,6 +2,14 @@
 
 require 'securerandom'
 
+# This acceptance specs wotks with test workers `spec/fixures/test_workers.rb`
+# Every worker on perform starting write to redis constant messsage that he starts work with this args.
+# And when he finish performing - he write the same message, but about finish processing.
+# In this specs we check output results of all workers. That all workers work exactly number of times
+# And with correct arguments.
+# To wait until all workers will finish work we use methods:
+#   - workers_waiter
+#   - scheduled_workers_waiter
 RSpec.describe Resque::Plugins::Uniqueness do
   subject do
     3.times { Resque.enqueue_in(2, worker_class, uniq_argument) }
@@ -54,11 +62,7 @@ RSpec.describe Resque::Plugins::Uniqueness do
   describe 'until_executing' do
     let(:worker_class) { UntilExecutingWorker }
 
-    let(:output_result) do
-      str = starting_worker_output
-      str += ending_worker_output
-      str
-    end
+    let(:output_result) { starting_worker_output + ending_worker_output }
 
     it { is_expected.to eq output_result }
   end
@@ -89,6 +93,24 @@ RSpec.describe Resque::Plugins::Uniqueness do
 
       it { is_expected.to eq output_result }
     end
+  end
+
+  describe 'unique_args' do
+    subject do
+      3.times { |i| Resque.enqueue_in(2, worker_class, uniq_argument, uuids[i]) }
+      3.times { |i| Resque.enqueue(worker_class, uniq_argument, uuids[i + 3]) }
+      3.times { |i| Resque.enqueue_to(:other_queue, worker_class, uniq_argument, uuids[i + 6]) }
+      workers_waiter
+      Resque.redis.get(TestWorker::REDIS_KEY)
+    end
+
+    let(:uuids) { (0..8).map { SecureRandom.uuid } }
+    let(:worker_class) { UntilExecutingWithUniqueArgsWorker }
+    let(:displayed_argument) { [uniq_argument, uuids[0]].to_json }
+
+    let(:output_result) { starting_worker_output + ending_worker_output }
+
+    it { is_expected.to eq output_result }
   end
 
   def workers_waiter

@@ -100,6 +100,18 @@ Locks when the client pushes the job to the queue. The queue will be unlocked wh
 
 With this lock type it is possible to put any number of these jobs on the queue, but as the server pops the job from the queue it will create a lock and then wait until other locks are done processing. It _looks_ like multiple jobs are running at the same time but in fact the second job will only be waiting for the first job to finish.
 
+## Filtering arguments
+
+```ruby
+def self.unique_args(first, second, _third)
+  [first, second]
+end
+```
+
+Overriding this method you could to choose which arguments will be used for unique lock. You could t
+provide empty array, to make lock only by class.
+Method always should returns array.
+
 ## Testing
 
 You should to run resque workers:
