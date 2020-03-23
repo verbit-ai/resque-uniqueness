@@ -11,6 +11,9 @@
   - [Until Executing](#until-executing)
   - [Until And While Executing](#until-and-while-executing)
   - [While Executing](#while-executing)
+- [Uniqueness Key Constructor](#uniqueness-key-constructor)
+  - [Uniqueness klass key](#uniqueness-klass-key)
+  - [Uniqueness filtering args](#uniqueness-filtering-args)
 - [Testing](#testing)
 - [Contributing](#contributing)
 - [License](#license)
@@ -50,7 +53,7 @@ gem install resque-uniqueness
 
 You can set a default lock type for all workers with:
 ```ruby 
-Resque::Uniqueness.default_lock_type = :while_executing
+Resque::Plugins::Uniqueness.default_lock_type = :while_executing
 ```
 By default all jobs have an `until_executing` lock type.
 
@@ -100,17 +103,38 @@ Locks when the client pushes the job to the queue. The queue will be unlocked wh
 
 With this lock type it is possible to put any number of these jobs on the queue, but as the server pops the job from the queue it will create a lock and then wait until other locks are done processing. It _looks_ like multiple jobs are running at the same time but in fact the second job will only be waiting for the first job to finish.
 
-## Filtering arguments
+## Uniqueness Key Constructor
+
+To have a control over the uniqueness key, gem provides two options:
+
+- Control over class serialization.
+- Control over arguments serialization
+
+This configuration options works perfectly together.
+
+### Uniqueness klass key
+
+Could be helpfull when you using some gem, which change base class serialization, like `resque-prioritize`, or even you want to have one lock for all children of some `TestWorker`
+
+```ruby
+def self.uniqueness_key
+  self.superclass
+end
+```
+
+### Uniqueness filtering args
+
+Overriding this method you could to choose which arguments will be used for unique lock. You could t
+provide empty array, to make lock only by class.
+Method always should returns array.
+
+Filtering arguments
 
 ```ruby
 def self.unique_args(first, second, _third)
   [first, second]
 end
 ```
-
-Overriding this method you could to choose which arguments will be used for unique lock. You could t
-provide empty array, to make lock only by class.
-Method always should returns array.
 
 ## Testing
 
