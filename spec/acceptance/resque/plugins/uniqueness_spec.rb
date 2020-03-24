@@ -113,6 +113,24 @@ RSpec.describe Resque::Plugins::Uniqueness do
     it { is_expected.to eq output_result }
   end
 
+  describe 'uniqueness_key' do
+    subject do
+      allow(UntilExecutingWorker).to receive(:uniqueness_key).and_return('TestWorker')
+      allow(UntilAndWhileExecutingWorker).to receive(:uniqueness_key).and_return('TestWorker')
+
+      3.times { Resque.enqueue_in(2, UntilExecutingWorker, uniq_argument) }
+      3.times { Resque.enqueue_in(2, UntilAndWhileExecutingWorker, uniq_argument) }
+      workers_waiter
+      Resque.redis.get(TestWorker::REDIS_KEY)
+    end
+
+    let(:worker_class) { UntilExecutingWorker } # called first, so UntilAndWhileExecutingWorker should be skipped because of lock
+    let(:displayed_argument) { [uniq_argument].to_json }
+    let(:output_result) { starting_worker_output + ending_worker_output }
+
+    it { is_expected.to eq output_result }
+  end
+
   def workers_waiter
     working_keys = %w[delayed: queue: test_worker_performing:]
     working_jobs = /(#{working_keys.join(')|(')})/

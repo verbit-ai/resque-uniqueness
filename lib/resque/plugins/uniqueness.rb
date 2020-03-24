@@ -33,9 +33,9 @@ module Resque
     #
     # It is implemented by providing Resque callbacks where possible, and intercepting (patching)
     # the following places in Resque:
-    #   1. Resque::Uniqueness is aware of, and compatible with a resque-scheduler gem: when a job
-    #   with until_executing or until_and_while_executing lock type is tried to be scheduled,
-    #   the before_schedule hook checks it and ignores if one is already in queue.
+    #   1. Resque::Plugins::Uniqueness is aware of, and compatible with a resque-scheduler gem:
+    #   when a job with until_executing or until_and_while_executing lock type is tried to be
+    #   scheduled, the before_schedule hook checks it and ignores if one is already in queue.
     #   2. ignoring enqueue (see {Plugins::Uniqueness.before_enqueue_check_lock_availability});
     #   3. putting a job into the queue (see {JobExtension::ClassMethods.create});
     #   4. fetching the job from the queue to perform (see {JobExtension::ClassMethods.reserve});
@@ -144,6 +144,11 @@ module Resque
 
       # Helper methods and callbacks for jobs
       module ClassMethods
+        # Serialize klass for unique key
+        def uniqueness_key
+          name
+        end
+
         # Filters args which should be unique
         def unique_args(*args)
           args
