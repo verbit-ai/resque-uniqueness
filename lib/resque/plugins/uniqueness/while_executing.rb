@@ -31,11 +31,11 @@ module Resque
           value_before = redis.getset(redis_key, 1)
           log('Performing locked')
 
-          # If value before is postive, than lock already present
-          if value_before.to_i.positive?
-            log('Performing locking error')
-            raise LockingError, 'Job is already locked on perform'
-          end
+          # # If value before is postive, than lock already present
+          # if value_before.to_i.positive?
+          #   log('Performing locking error')
+          #   raise LockingError, 'Job is already locked on perform'
+          # end
 
           run_lock_renewal
         end

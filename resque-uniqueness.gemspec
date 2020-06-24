@@ -36,7 +36,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'resque', '~> 2.0.0'
-  spec.add_dependency 'resque-scheduler', '~> 4.0'
+  spec.add_dependency 'resque-scheduler'
 
   spec.add_development_dependency 'bundler', '~> 2.0'
   spec.add_development_dependency 'rake', '~> 12.3.3'

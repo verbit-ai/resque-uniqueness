@@ -25,22 +25,33 @@ module Resque
             # that we don't to lock unvalid jobs, we duplicate this validation here
             Resque.validate(klass, queue)
 
+            p "[UNINQ] skip_uniqueness_on_create?(#{klass}) -> #{skip_uniqueness_on_create?(klass)}"
+
             return super if skip_uniqueness_on_create?(klass)
+            # if skip_uniqueness_on_create?(klass)
+            #   res = Resque.redis.multi do
+            #     super
+            #   end
+            #   super
+            #   p "[UNINQ] Super create -- #{res}"
+            #   return
+            # end
 
             job = new(queue, 'class' => klass.to_s, 'args' => decode(encode(args)))
 
+            p "[UNINQ] Create queueing_locked?: #{job.uniqueness.queueing_locked?} job: #{job.payload}"
+
             return if job.uniqueness.queueing_locked?
 
-            job.uniqueness.try_lock_queueing
-            super
-          rescue LockingError => e
-            # In case when two threads locking the same job at the same moment -
-            # uniqueness will raise this error for one from them.
-            # In this case we should to return nil, but if parent method can handle error -
-            # we should to throw it to the parent for preventing to run after hooks.
-            raise if parent_handle_locking_error?(e)
-
-            nil
+            res = nil
+            Resque.redis.multi do
+              job.uniqueness.try_lock_queueing
+              res = super
+            end
+            res
+          rescue => e
+            p 'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE create'
+            p e
           end
 
           # Resque call this method, when starting to process job
@@ -53,12 +64,17 @@ module Resque
 
             return unless job
 
-            job.uniqueness.ensure_unlock_queueing
-            # FIXME: we release lock on queueing and when we push job back to queue (on locking error)
-            # we don't set this lock again.
-            # This bug shouldn't be reproducable beacuase it works only for `until_and_while_executing` lock type,
-            # and in this case we couldn't have two same jobs in queue, but we should to take care on it
-            job.uniqueness.try_lock_perform
+            res = Resque.redis.multi do
+              job.uniqueness.ensure_unlock_queueing
+              # FIXME: we release lock on queueing and when we push job back to queue (on locking error)
+              # we don't set this lock again.
+              # This bug shouldn't be reproducable beacuase it works only for `until_and_while_executing` lock type,
+              # and in this case we couldn't have two same jobs in queue, but we should to take care on it
+              job.uniqueness.try_lock_perform
+            end
+
+            p "[UNINQ] Reserve redis [#{res}] job: #{job.payload}"
+
             job
           rescue LockingError
             # In case when two threads pick up the same job, which don't locked yet,
@@ -86,6 +102,9 @@ module Resque
           end
 
           def skip_uniqueness_on_create?(klass)
+            # Resque.inline?.tap { |res| p "[UNINQ] Resque.inline? -> #{res}" } ||
+            #   !Resque::Plugins::Uniqueness.enabled_for?(klass).tap { |res| p "[UNINQ] !Resque::Plugins::Uniqueness.enabled_for?(klass) -> #{res}" } ||
+            #   klass.call_from_scheduler?.tap { |res| p "[UNINQ] klass.call_from_scheduler? -> #{res}" } # klass will contain this method if plugin enabled
             Resque.inline? ||
               !Resque::Plugins::Uniqueness.enabled_for?(klass) ||
               klass.call_from_scheduler? # klass will contain this method if plugin enabled

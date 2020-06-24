@@ -204,13 +204,16 @@ module Resque
         def call_from_scheduler?
           # This path is from the `resque-scheduler` gem
           # Its not related to resque-uniqueness.
+          # caller.tap { |res| p "[UNINQ] caller -> #{res}" }.grep(%r{lib/resque/scheduler\.rb.*enqueue_next_item}).tap { |res| p "[UNINQ] caller.scheduler? -> #{res}" }.any?
           caller.grep(%r{lib/resque/scheduler\.rb.*enqueue_next_item}).any?
         end
 
         private
 
         def job_available_for_queueing?(args)
-          !create_job(args).uniqueness.queueing_locked?
+          !create_job(args).uniqueness.queueing_locked?.tap do |res|
+            p "[UNINQ] Job available for queueing[#{res}] - #{args}"
+          end
         end
 
         def create_job(args)

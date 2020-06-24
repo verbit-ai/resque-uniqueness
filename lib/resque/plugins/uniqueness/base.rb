@@ -36,7 +36,8 @@ module Resque
         end
 
         def ensure_unlock_queueing
-          unlock_queueing if queueing_locked?
+          # unlock_queueing if queueing_locked?
+          unlock_queueing
         end
 
         private
