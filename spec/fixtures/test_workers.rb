@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-require 'securerandom'
+require 'resque-retry'
+
 # Simple test worker
 class TestWorker
   include Resque::Plugins::Uniqueness
@@ -11,26 +12,32 @@ class TestWorker
 
   def self.perform(*args)
     before_processing(args)
-    sleep 1
-    yield if block_given?
+    if block_given?
+      yield
+    else
+      sleep 1
+    end
   ensure
     after_processing(args)
   end
 
-  def self.print_to_redis(text)
-    old_text = Resque.redis.get(REDIS_KEY) || ''
-    Resque.redis.set(REDIS_KEY, old_text + text)
-    puts text
+  def self.before_perform_track_processing(*)
+    Resque.redis.setex("test_worker_performing:#{key}", 10, 'test')
   end
 
   def self.before_processing(args)
-    Resque.redis.set("test_worker_performing:#{key}", 'test')
     print_to_redis "Starting processing #{worker_attributes(args)}"
   end
 
   def self.after_processing(args)
     print_to_redis "Ending processing #{worker_attributes(args)}"
     Resque.redis.del("test_worker_performing:#{key}")
+  end
+
+  def self.print_to_redis(text)
+    old_text = Resque.redis.get(REDIS_KEY) || ''
+    Resque.redis.set(REDIS_KEY, old_text + text)
+    Resque.logger.info text
   end
 
   def self.worker_attributes(args)
@@ -98,4 +105,24 @@ end
 class NoneWorker < TestWorker
   @lock_type = :none
   @queue = :test_job
+end
+
+UUIDS_FINISHED_REDIS_KEY = 'workers:finished:uuids'
+
+class UntilExecutingRecoverWorker < UntilExecutingWorker
+  extend Resque::Plugins::Retry
+
+  @retry_limit = 100
+  @queue = :test_job_recovering
+
+  retry_criteria_check do |_e, uuid|
+    return false if Resque.redis.lrange(UUIDS_FINISHED_REDIS_KEY, 0, -1).include?(uuid)
+
+    false
+  end
+
+  def self.perform(uuid)
+    Resque.redis.rpush(UUIDS_FINISHED_REDIS_KEY, uuid)
+    super { sleep rand(0.1..3) }
+  end
 end

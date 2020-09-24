@@ -71,7 +71,9 @@ module Resque
           # Destroy with jobs their queueing locks
           # TODO: move logic of releasing locks into Resque::DataStore::QueueAccess#remove_from_queue method
           def destroy(queue, klass, *args)
-            Resque::Plugins::Uniqueness.destroy(queue, klass, *args) unless Resque.inline?
+            unless Resque.inline?
+              Resque::Plugins::Uniqueness.unlock_queueing_for(queue, klass, *args)
+            end
 
             super
           end
@@ -92,6 +94,19 @@ module Resque
           end
         end
 
+        # This operation ensure that queueing is locked and job placed into queue (or, if it
+        # already scheduled, in the schedule)
+        # FIXME: This method could be a very slow (see #queued? method). But for now it's used
+        #        only for jobs, which needs a recovering. So, realy rarely.
+        #        Be sure, if you want to reuse it, rewrite #queued? method, or use it really rarely.
+        #        like me.
+        def ensure_enqueue
+          uniqueness.safe_try_lock_queueing unless uniqueness.queueing_locked?
+
+          scheduled? || queued? ||
+            Resque::Plugins::Uniqueness.push(queue, class: payload_class.to_s, args: args)
+        end
+
         def uniqueness
           @uniqueness ||= Resque::Plugins::Uniqueness.fetch_for(self)
         end
@@ -102,6 +117,21 @@ module Resque
         # We handle this exception in Resque::Plugins::Uniqueness::ResqueExtension.enqueue_to method
         def parent_handle_locking_error?(error)
           error.backtrace.any? { |trace| trace =~ /resque\.rb.*`enqueue_to/ }
+        end
+
+        private
+
+        def scheduled?
+          item = Resque.encode(class: payload_class.to_s, args: args, queue: queue)
+          Resque.redis.exists?("timestamps:#{item}")
+        end
+
+        # NOTE: This could be a very slow operation (in case when queue has a lot of jobs), so
+        #       use it only if you sure that you need it.
+        def queued?
+          Resque.redis
+                .everything_in_queue(queue)
+                .include?(Resque.encode(class: payload_class.to_s, args: args))
         end
       end
     end
