@@ -9,12 +9,18 @@ require_relative 'uniqueness/while_executing'
 require_relative 'uniqueness/until_executing'
 require_relative 'uniqueness/until_and_while_executing'
 require_relative 'uniqueness/job_extension'
+require_relative 'uniqueness/worker_extension'
 require_relative 'uniqueness/resque_extension'
 require_relative 'uniqueness/resque_scheduler_extension'
+require_relative 'uniqueness/recovering_queue'
 
 Resque.prepend Resque::Plugins::Uniqueness::ResqueExtension
 Resque::Job.prepend Resque::Plugins::Uniqueness::JobExtension
+Resque::Worker.prepend Resque::Plugins::Uniqueness::WorkerExtension
 Resque.prepend Resque::Plugins::Uniqueness::ResqueSchedulerExtension
+Resque.logger = Logger.new(STDOUT, level: :info)
+
+Resque.before_first_fork(&Resque::Plugins::Uniqueness::RecoveringQueue.method(:recover_all))
 
 module Resque
   module Plugins
@@ -75,7 +81,7 @@ module Resque
         # while_executing lock we should to be sure that we popped unlocked job.
         # That's why we should to check lock of popped job, and if its locked - push it back.
         def pop_perform_unlocked(queue)
-          item = Resque.pop(queue) or return
+          item = pop(queue) or return
 
           job = Resque::Job.new(queue, item)
           if job.uniqueness.perform_locked?
@@ -87,29 +93,32 @@ module Resque
         end
 
         def push(queue, item)
-          Resque.push(queue, item)
+          Resque.redis.multi do
+            RecoveringQueue.remove(queue, item)
+            Resque.push(queue, item)
+          end
         end
 
-        def destroy(queue, klass, *args)
+        def unlock_queueing_for(queue, klass, *args)
           klass = klass.to_s
           Resque.data_store.everything_in_queue(queue).each do |string|
-            json = Resque.decode(string)
-            next unless json['class'] == klass
+            item = Resque.decode(string)
+            next unless item['class'] == klass
             # Resque destroys all jobs with the certain class if args is empty.
             # That's why we should to check presence of args before comparing it with
             # the args from redis
-            next if args.any? && json['args'] != args
+            next if args.any? && item['args'] != args
 
-            unlock_queueing(queue, json)
+            unlock_queueing(queue, item).tap { RecoveringQueue.remove(queue, item) }
           end
         end
 
         # Unlock queueing for every job in the certain queue
-        def remove_queue(queue)
+        def unlock_queueing_for_queue(queue)
           Resque.data_store.everything_in_queue(queue).uniq.each do |string|
-            json = Resque.decode(string)
+            item = Resque.decode(string)
 
-            unlock_queueing(queue, json)
+            unlock_queueing(queue, item).tap { RecoveringQueue.remove(queue, item) }
           end
         end
 
@@ -122,23 +131,15 @@ module Resque
           LOCKS[lock_key].new(job)
         end
 
-        def remove_job_from_queue(queue, job)
-          return false unless job
-
-          job.redis.lrem(queue_key(queue), 1, Resque.encode(job.payload))
-        end
-
         def enabled_for?(klass)
           klass.included_modules.include?(self)
         end
 
         private
 
-        # Key from lib/resque/data_store.rb `#redis_key_from_queue` method
-        # If in further versions of resque key for queue will change -
-        # we should to change this method as well
-        def queue_key(queue)
-          "queue:#{queue}"
+        def pop(queue)
+          Resque.pop(queue)
+                .tap { |item| item and RecoveringQueue.push(queue, item) }
         end
       end
 

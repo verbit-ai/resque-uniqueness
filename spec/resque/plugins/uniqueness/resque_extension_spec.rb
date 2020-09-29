@@ -10,11 +10,11 @@ RSpec.describe Resque::Plugins::Uniqueness::ResqueExtension do
 
     before do
       allow(Resque).to receive(:data_store).and_return(data_store_instance)
-      allow(Resque::Plugins::Uniqueness).to receive(:remove_queue)
+      allow(Resque::Plugins::Uniqueness).to receive(:unlock_queueing_for_queue)
     end
 
     its_block { is_expected.to send_message(data_store_instance, :remove_queue) }
-    its_block { is_expected.to send_message(Resque::Plugins::Uniqueness, :remove_queue) }
+    its_block { is_expected.to send_message(Resque::Plugins::Uniqueness, :unlock_queueing_for_queue) }
     it { is_expected.to eq :response }
 
     context 'when resque inline' do
@@ -25,7 +25,7 @@ RSpec.describe Resque::Plugins::Uniqueness::ResqueExtension do
       end
 
       its_block { is_expected.to send_message(data_store_instance, :remove_queue) }
-      its_block { is_expected.not_to send_message(Resque::Plugins::Uniqueness, :remove_queue) }
+      its_block { is_expected.not_to send_message(Resque::Plugins::Uniqueness, :unlock_queueing_for_queue) }
       it { is_expected.to eq :response }
     end
   end

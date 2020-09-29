@@ -11,6 +11,29 @@ Metrics/LineLength:
 Style/AndOr:
   EnforcedStyle: conditionals
 
+Style/FormatStringToken:
+  EnforcedStyle: template
+
+Style/FormatString:
+  EnforcedStyle: percent
+
+# Our style is {} for functional blocks AND one-line imperative blocks
+Style/BlockDelimiters:
+  EnforcedStyle: semantic
+  AllowBracesOnProceduralOneLiners: true
+  FunctionalMethods:
+    - then
+    - yield_self
+    - find # No idea why Rubocop originally thinks it is procedural...
+    # Tubby
+    - div
+    - span
+    - label
+    # Specs
+    - its_block
+    - let
+    # ...todo
+
 Metrics/BlockLength:
   Exclude: ['*.gemspec']
 

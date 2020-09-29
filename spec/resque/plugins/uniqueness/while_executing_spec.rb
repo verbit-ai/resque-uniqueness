@@ -73,4 +73,17 @@ RSpec.describe Resque::Plugins::Uniqueness::WhileExecuting do
       is_expected.not_to match(/test_queue/)
     end
   end
+
+  describe '#safe_try_lock_queueing' do
+    subject(:call) { lock_instance.safe_try_lock_queueing }
+
+    its_block { is_expected.not_to raise_error }
+
+    # None lock type doesn not have any locks for queueing. So, error will not be raised
+    context 'when already locked' do
+      before { Resque.redis.incr(redis_key) }
+
+      its_block { is_expected.not_to raise_error }
+    end
+  end
 end

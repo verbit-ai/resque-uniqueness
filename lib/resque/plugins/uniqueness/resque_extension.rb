@@ -23,7 +23,9 @@ module Resque
           end
 
           def remove_queue(queue)
-            super.tap { Resque::Plugins::Uniqueness.remove_queue(queue) unless Resque.inline? }
+            super.tap {
+              Resque::Plugins::Uniqueness.unlock_queueing_for_queue(queue) unless Resque.inline?
+            }
           end
 
           def remove_delayed_job(encoded_item)

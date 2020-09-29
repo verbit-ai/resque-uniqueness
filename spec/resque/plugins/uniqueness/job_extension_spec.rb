@@ -40,9 +40,10 @@ RSpec.describe Resque::Plugins::Uniqueness::JobExtension do
 
     context 'when class not include plugin' do
       let(:klass) do
-        class WithoutUniquenessPluginWorker
-          def self.perform; end
-        end
+        stub_const('WithoutUniquenessPluginWorker',
+                   Class.new do
+                     def self.perform; end
+                   end)
         WithoutUniquenessPluginWorker
       end
 
@@ -127,7 +128,7 @@ RSpec.describe Resque::Plugins::Uniqueness::JobExtension do
     before { Resque.enqueue(klass, *args) }
 
     its_block { is_expected.to change(uniqueness, :queueing_locked?).from(true).to(false) }
-    its_block { is_expected.to send_message(Resque::Plugins::Uniqueness, :destroy) }
+    its_block { is_expected.to send_message(Resque::Plugins::Uniqueness, :unlock_queueing_for) }
     it { is_expected.to eq 1 }
 
     context 'when resque inline' do
@@ -137,7 +138,89 @@ RSpec.describe Resque::Plugins::Uniqueness::JobExtension do
         Resque.inline = false
       end
 
-      its_block { is_expected.not_to send_message(Resque::Plugins::Uniqueness, :destroy) }
+      its_block { is_expected.not_to send_message(Resque::Plugins::Uniqueness, :unlock_queueing_for) }
+    end
+  end
+
+  describe 'instance methods' do
+    let(:job) { Resque::Job.new(queue, 'class' => klass, 'args' => args) }
+    let(:klass) { UntilExecutingWorker }
+
+    describe '#ensure_enqueue' do
+      subject(:call) { job.ensure_enqueue }
+
+      its_block { is_expected.to change(&method(:queueing_locked?)).from(false).to(true) }
+      its_block { is_expected.to change(&method(:count_in_queue)).from(0).to(1) }
+      its_block { is_expected.not_to change(&method(:count_scheduled)) }
+      it { call && (expect(count_scheduled).to eq 0) }
+
+      context 'when queueing locked' do
+        before { job.uniqueness.try_lock_queueing }
+
+        its_block { is_expected.not_to change(&method(:queueing_locked?)) }
+        it { call && (expect(queueing_locked?).to eq true) }
+
+        its_block { is_expected.to change(&method(:count_in_queue)).from(0).to(1) }
+        its_block { is_expected.not_to change(&method(:count_scheduled)) }
+        it { call && (expect(count_scheduled).to eq 0) }
+      end
+
+      context 'when scheduled' do
+        before do
+          Resque.enqueue_in(10, job.payload_class, *job.args)
+          job.uniqueness.ensure_unlock_queueing
+        end
+
+        its_block { is_expected.to change(&method(:queueing_locked?)).from(false).to(true) }
+
+        its_block { is_expected.not_to change(&method(:count_in_queue)) }
+        it { call && (expect(count_in_queue).to eq 0) }
+
+        its_block { is_expected.not_to change(&method(:count_scheduled)) }
+        it { call && (expect(count_scheduled).to eq 1) }
+      end
+
+      context 'when queued' do
+        before do
+          Resque.enqueue(job.payload_class, *job.args)
+          job.uniqueness.ensure_unlock_queueing
+        end
+
+        its_block { is_expected.to change(&method(:queueing_locked?)).from(false).to(true) }
+
+        its_block { is_expected.not_to change(&method(:count_in_queue)) }
+        it { call && (expect(count_in_queue).to eq 1) }
+
+        its_block { is_expected.not_to change(&method(:count_scheduled)) }
+        it { call && (expect(count_scheduled).to eq 0) }
+      end
+
+      context 'when queued and queueing locked' do
+        before { Resque.enqueue(job.payload_class, *job.args) }
+
+        its_block { is_expected.not_to change(&method(:queueing_locked?)) }
+        it { call && (expect(queueing_locked?).to eq true) }
+
+        its_block { is_expected.not_to change(&method(:count_in_queue)) }
+        it { call && (expect(count_in_queue).to eq 1) }
+
+        its_block { is_expected.not_to change(&method(:count_scheduled)) }
+        it { call && (expect(count_scheduled).to eq 0) }
+      end
+
+      def queueing_locked?
+        job.uniqueness.queueing_locked?
+      end
+
+      def count_in_queue
+        encoded_payload = Resque.encode(class: job.payload_class.to_s, args: job.args)
+        Resque.redis.everything_in_queue(queue).count { |item| item == encoded_payload }
+      end
+
+      def count_scheduled
+        encoded_payload = Resque.encode(class: job.payload_class.to_s, args: job.args, queue: queue)
+        Resque.redis.scard("timestamps:#{encoded_payload}")
+      end
     end
   end
 end

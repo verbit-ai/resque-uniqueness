@@ -9,3 +9,11 @@ group :development do
   gem 'rubocop'
   gem 'rubocop-rspec'
 end
+
+group :development, :test do
+  gem 'resque-retry'
+end
+
+group :test do
+  gem 'timecop'
+end

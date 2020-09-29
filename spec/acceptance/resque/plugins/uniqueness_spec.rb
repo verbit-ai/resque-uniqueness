@@ -10,16 +10,16 @@ require 'securerandom'
 # To wait until all workers will finish work we use methods:
 #   - workers_waiter
 #   - scheduled_workers_waiter
-RSpec.describe Resque::Plugins::Uniqueness do
-  subject do
+RSpec.describe Resque::Plugins::Uniqueness, type: :acceptance do
+  subject(:output) do
     3.times { Resque.enqueue_in(2, worker_class, uniq_argument) }
     3.times { Resque.enqueue(worker_class, uniq_argument) }
     3.times { Resque.enqueue_to(:other_queue, worker_class, uniq_argument) }
     workers_waiter
     Resque.redis.get(TestWorker::REDIS_KEY)
+          .tap { timestamp_formatted }
+          .tap { copy_current_redis }
   end
-
-  before { Resque.redis.del(TestWorker::REDIS_KEY) }
 
   let(:uniq_argument) { SecureRandom.uuid }
   let(:displayed_argument) { [uniq_argument].to_json }
@@ -41,7 +41,7 @@ RSpec.describe Resque::Plugins::Uniqueness do
   describe 'while_executing' do
     let(:worker_class) { WhileExecutingWorker }
 
-    let(:output_result) do
+    let(:expected_output) do
       str = ''
       9.times do
         str += starting_worker_output
@@ -50,21 +50,21 @@ RSpec.describe Resque::Plugins::Uniqueness do
       str
     end
 
-    it { is_expected.to eq output_result }
+    it { is_expected.to eq expected_output }
 
     context 'when raise error on perform' do
       let(:worker_class) { WhileExecutingPerformErrorWorker }
 
-      it { is_expected.to eq output_result }
+      it { is_expected.to eq expected_output }
     end
   end
 
   describe 'until_executing' do
     let(:worker_class) { UntilExecutingWorker }
 
-    let(:output_result) { starting_worker_output + ending_worker_output }
+    let(:expected_output) { starting_worker_output + ending_worker_output }
 
-    it { is_expected.to eq output_result }
+    it { is_expected.to eq expected_output }
   end
 
   describe 'until_and_while_executing' do
@@ -76,7 +76,7 @@ RSpec.describe Resque::Plugins::Uniqueness do
 
     let(:worker_class) { UntilAndWhileExecutingWorker }
 
-    let(:output_result) do
+    let(:expected_output) do
       str = ''
       # one from super subject and one from main subject
       2.times do
@@ -86,12 +86,12 @@ RSpec.describe Resque::Plugins::Uniqueness do
       str
     end
 
-    it { is_expected.to eq output_result }
+    it { is_expected.to eq expected_output }
 
     context 'when raise error on perform' do
       let(:worker_class) { UntilAndWhileExecutingPerformErrorWorker }
 
-      it { is_expected.to eq output_result }
+      it { is_expected.to eq expected_output }
     end
   end
 
@@ -108,9 +108,9 @@ RSpec.describe Resque::Plugins::Uniqueness do
     let(:worker_class) { UntilExecutingWithUniqueArgsWorker }
     let(:displayed_argument) { [uniq_argument, uuids[0]].to_json }
 
-    let(:output_result) { starting_worker_output + ending_worker_output }
+    let(:expected_output) { starting_worker_output + ending_worker_output }
 
-    it { is_expected.to eq output_result }
+    it { is_expected.to eq expected_output }
   end
 
   describe 'uniqueness_key' do
@@ -126,20 +126,8 @@ RSpec.describe Resque::Plugins::Uniqueness do
 
     let(:worker_class) { UntilExecutingWorker } # called first, so UntilAndWhileExecutingWorker should be skipped because of lock
     let(:displayed_argument) { [uniq_argument].to_json }
-    let(:output_result) { starting_worker_output + ending_worker_output }
+    let(:expected_output) { starting_worker_output + ending_worker_output }
 
-    it { is_expected.to eq output_result }
-  end
-
-  def workers_waiter
-    working_keys = %w[delayed: queue: test_worker_performing:]
-    working_jobs = /(#{working_keys.join(')|(')})/
-    sleep 1 until Resque.redis.keys.grep(working_jobs).empty?
-  end
-
-  def scheduled_workers_waiter
-    scheduled_keys = %w[delayed: queue:]
-    scheduled_jobs = /(#{scheduled_keys.join(')|(')})/
-    sleep 1 until Resque.redis.keys.grep(scheduled_jobs).empty?
+    it { is_expected.to eq expected_output }
   end
 end

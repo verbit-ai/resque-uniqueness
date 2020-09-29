@@ -39,6 +39,18 @@ module Resque
           unlock_queueing if queueing_locked?
         end
 
+        def safe_try_lock_queueing
+          try_lock_queueing
+        rescue LockingError
+          nil
+        end
+
+        def safe_try_lock_perform
+          try_lock_perform
+        rescue LockingError
+          nil
+        end
+
         private
 
         attr_reader :job

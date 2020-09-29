@@ -3,12 +3,28 @@ inherit_from: ../.rubocop.yml
 RSpec/ImplicitSubject:
   Enabled: false
 
+# NOTE: temporary disabled, enable it when https://github.com/rubocop-hq/rubocop-rspec/pull/956
+#       will be merged and relised
 RSpec/EmptyExampleGroup:
+  Enabled: false
   CustomIncludeMethods:
-    - 'its_block'
-
+    - its_block
+    - its_call
+    - its_map
 Metrics/BlockLength:
   Enabled: false
 
 Metrics/LineLength:
+  Enabled: false
+
+RSpec/DescribeClass:
+  Enabled: false
+
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+
+RSpec/ImplicitBlockExpectation:
+  Enabled: false
+
+RSpec/NestedGroups:
   Enabled: false
