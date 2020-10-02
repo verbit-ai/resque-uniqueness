@@ -30,10 +30,20 @@ RSpec.configure do |config|
     Resque.redis = 'localhost:6379/resque_uniqueness_test'
   end
 
+  config.before do
+    Resque.redis.sadd(
+      Resque::Plugins::Uniqueness::RecoveringQueue::ALLOWED_QUEUES_REDIS_KEY,
+      %i[test_job test_job_recovering]
+    )
+  end
+
   config.before(:each, :freeze_current_time) { Timecop.freeze }
 
   config.after { Timecop.return }
-  config.after { Resque.redis.del(*Resque.redis.keys) if Resque.redis.keys.any? }
+  config.after do
+    keys = Resque.redis.keys
+    Resque.redis.del(*keys) if keys.any?
+  end
 
   config.after(:context, type: :acceptance) do
     Resque.redis = 'localhost:6379/resque_uniqueness_test_isolated'
