@@ -28,9 +28,14 @@ module Resque
         # Unique que, passed into item payload
         UUID_KEY = :recovering_uuid
 
+        # Queues, on which we trying to use a recovering queue functionality
+        ALLOWED_QUEUES_REDIS_KEY = 'recovering:allowed:queues'
+
         # Should be pushed definately after the job was taken from the queue
         # NOTE: This method modify item, and add uuid to it.
         def push(queue, item)
+          return unless in_allowed_queues?(queue)
+
           item[UUID_KEY] = SecureRandom.uuid
 
           Resque.redis
@@ -55,10 +60,9 @@ module Resque
 
         # Should be run once in the before_first_fork resque hook
         def recover_all
-          Resque.redis
-                .keys("#{REDIS_KEY_PREFIX}*")
-                .map { |key| key.sub(REDIS_KEY_PREFIX, '') }
-                .each(&method(:recover))
+          allowed_queues
+            .map { |key| key.to_s.sub(REDIS_KEY_PREFIX, '') }
+            .each(&method(:recover))
         end
 
         private
@@ -79,6 +83,14 @@ module Resque
             Resque.redis.zrangebyscore(*args)
             Resque.redis.zremrangebyscore(*args)
           }.first.map(&Resque.method(:decode))
+        end
+
+        def in_allowed_queues?(queue)
+          allowed_queues.include?(queue.to_sym)
+        end
+
+        def allowed_queues
+          @allowed_queues ||= Resque.redis.smembers(ALLOWED_QUEUES_REDIS_KEY).map(&:to_sym)
         end
       end
     end

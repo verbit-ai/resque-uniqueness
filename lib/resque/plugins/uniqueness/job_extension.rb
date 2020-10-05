@@ -123,7 +123,7 @@ module Resque
 
         def scheduled?
           item = Resque.encode(class: payload_class.to_s, args: args, queue: queue)
-          Resque.redis.exists?("timestamps:#{item}")
+          Resque.redis.exists("timestamps:#{item}")
         end
 
         # NOTE: This could be a very slow operation (in case when queue has a lot of jobs), so
