@@ -65,6 +65,10 @@ module Resque
             .each(&method(:recover))
         end
 
+        def in_allowed_queues?(queue)
+          allowed_queues.include?(queue.to_sym)
+        end
+
         private
 
         def recover(queue)
@@ -83,10 +87,6 @@ module Resque
             Resque.redis.zrangebyscore(*args)
             Resque.redis.zremrangebyscore(*args)
           }.first.map(&Resque.method(:decode))
-        end
-
-        def in_allowed_queues?(queue)
-          allowed_queues.include?(queue.to_sym)
         end
 
         def allowed_queues

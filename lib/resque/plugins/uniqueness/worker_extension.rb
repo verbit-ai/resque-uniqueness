@@ -8,6 +8,8 @@ module Resque
       # the recovering queue
       module WorkerExtension
         def working_on(job)
+          return super(job) unless RecoveringQueue.in_allowed_queues?(job.queue)
+
           Resque.redis.multi do
             super(job)
             RecoveringQueue.remove(job.queue, job.payload)
