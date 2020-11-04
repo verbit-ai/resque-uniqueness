@@ -102,9 +102,9 @@ module Resque
         #        like me.
         def ensure_enqueue
           uniqueness.safe_try_lock_queueing unless uniqueness.queueing_locked?
+          return if scheduled? || queued?
 
-          scheduled? || queued? ||
-            Resque::Plugins::Uniqueness.push(queue, class: payload_class.to_s, args: args)
+          Resque::Plugins::Uniqueness.push(queue, class: payload_class.to_s, args: args)
         end
 
         def uniqueness

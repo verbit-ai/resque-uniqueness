@@ -93,6 +93,8 @@ module Resque
         end
 
         def push(queue, item)
+          return Resque.push(queue, item) unless RecoveringQueue.in_allowed_queues?(queue)
+
           Resque.redis.multi do
             RecoveringQueue.remove(queue, item)
             Resque.push(queue, item)
@@ -114,6 +116,8 @@ module Resque
         end
 
         # Unlock queueing for every job in the certain queue
+        # NOTE: It's could be a heavy method, so use it only in case, when you should.
+        #       Now, used in the Resque.remove_queue method.
         def unlock_queueing_for_queue(queue)
           Resque.data_store.everything_in_queue(queue).uniq.each do |string|
             item = Resque.decode(string)
@@ -139,7 +143,7 @@ module Resque
 
         def pop(queue)
           Resque.pop(queue)
-                .tap { |item| item and RecoveringQueue.push(queue, item) }
+                .tap { |item| RecoveringQueue.push(queue, item) if item }
         end
       end
 
