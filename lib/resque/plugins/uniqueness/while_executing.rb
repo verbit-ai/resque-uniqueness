@@ -14,8 +14,8 @@ module Resque
       class WhileExecuting < Base
         PREFIX = 'performing'
         # We should to expiring while_executing lock to prevent unexpected terminated
-        LOCK_EXPIRE_SECONDS = 4
-        LOCK_RENEWAL_WAIT_SECONDS = 2
+        LOCK_EXPIRE_SECONDS = 1.minute.to_i
+        LOCK_RENEWAL_WAIT_SECONDS = 5
 
         def perform_locked?
           should_lock_on_perform? && already_performing?
