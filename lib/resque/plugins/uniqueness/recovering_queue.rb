@@ -66,6 +66,8 @@ module Resque
         end
 
         def in_allowed_queues?(queue)
+          return false if queue.nil?
+
           allowed_queues.include?(queue.to_sym)
         end
 

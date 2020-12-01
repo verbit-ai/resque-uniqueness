@@ -12,12 +12,16 @@ require_relative 'uniqueness/job_extension'
 require_relative 'uniqueness/worker_extension'
 require_relative 'uniqueness/resque_extension'
 require_relative 'uniqueness/resque_scheduler_extension'
+require_relative 'uniqueness/data_store_extension'
+
 require_relative 'uniqueness/recovering_queue'
+require_relative 'uniqueness/jobs_extractor'
 
 Resque.prepend Resque::Plugins::Uniqueness::ResqueExtension
 Resque::Job.prepend Resque::Plugins::Uniqueness::JobExtension
 Resque::Worker.prepend Resque::Plugins::Uniqueness::WorkerExtension
 Resque.prepend Resque::Plugins::Uniqueness::ResqueSchedulerExtension
+Resque::DataStore.include Resque::Plugins::Uniqueness::DataStoreExtension
 Resque.logger = Logger.new(STDOUT, level: :info)
 
 Resque.before_first_fork(&Resque::Plugins::Uniqueness::RecoveringQueue.method(:recover_all))
@@ -59,8 +63,6 @@ module Resque
     #     # :until_executing, :while_executing, :until_and_while_executing or :none
     #     @lock_type = <desired_type>
     module Uniqueness
-      REDIS_KEY_PREFIX = 'resque_uniqueness'
-
       LOCKS = {
         until_executing: UntilExecuting,
         while_executing: WhileExecuting,

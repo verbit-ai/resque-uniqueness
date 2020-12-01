@@ -27,10 +27,11 @@ RSpec.describe Resque::Plugins::Uniqueness::WhileExecuting do
   describe '#try_lock_perform' do
     subject(:call) { lock_instance.try_lock_perform }
 
-    it 'increment data in redis' do
-      call
-      expect(Resque.redis.get(redis_key)).to eq '1'
-    end
+    its_block {
+      is_expected.to change { Resque.redis.get(redis_key) }
+        .from(nil)
+        .to({class: klass, args: nil, queue: nil}.to_json)
+    }
 
     context 'when already locked' do
       around do |example|

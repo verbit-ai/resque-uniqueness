@@ -8,6 +8,9 @@ Metrics/LineLength:
   IgnoredPatterns:
     - '\#.*' # ignore long comments
 
+Metrics/ClassLength:
+  Max: 150
+
 Style/AndOr:
   EnforcedStyle: conditionals
 

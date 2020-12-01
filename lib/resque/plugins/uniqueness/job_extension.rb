@@ -111,19 +111,23 @@ module Resque
           @uniqueness ||= Resque::Plugins::Uniqueness.fetch_for(self)
         end
 
-        # For now only `Resque.enqueue_to` can and should handle LockingError exception.
-        # In case when we don't handle it there - we will run after hooks for job,
-        # which don't queued
-        # We handle this exception in Resque::Plugins::Uniqueness::ResqueExtension.enqueue_to method
-        def parent_handle_locking_error?(error)
-          error.backtrace.any? { |trace| trace =~ /resque\.rb.*`enqueue_to/ }
+        def to_encoded_item_with_queue
+          Resque.encode(class: payload_class.to_s, args: args, queue: queue)
+        end
+
+        def to_encoded_item
+          Resque.encode(class: payload_class.to_s, args: args)
+        end
+
+        def to_uniquness_item
+          Resque.encode(class: payload_class.uniqueness_key,
+                        args: payload_class.unique_args(*args))
         end
 
         private
 
         def scheduled?
-          item = Resque.encode(class: payload_class.to_s, args: args, queue: queue)
-          Resque.redis.exists("timestamps:#{item}")
+          Resque.redis.exists?("timestamps:#{to_encoded_item_with_queue}")
         end
 
         # NOTE: This could be a very slow operation (in case when queue has a lot of jobs), so
@@ -131,7 +135,15 @@ module Resque
         def queued?
           Resque.redis
                 .everything_in_queue(queue)
-                .include?(Resque.encode(class: payload_class.to_s, args: args))
+                .include?(to_encoded_item)
+        end
+
+        # For now only `Resque.enqueue_to` can and should handle LockingError exception.
+        # In case when we don't handle it there - we will run after hooks for job,
+        # which don't queued
+        # We handle this exception in Resque::Plugins::Uniqueness::ResqueExtension.enqueue_to method
+        def parent_handle_locking_error?(error)
+          error.backtrace.any? { |trace| trace =~ /resque\.rb.*`enqueue_to/ }
         end
       end
     end

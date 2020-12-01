@@ -5,7 +5,7 @@ module LockHelper
   include BaseHelper
   include JobHelper
 
-  REDIS_KEY_PREFIX = Resque::Plugins::Uniqueness::REDIS_KEY_PREFIX
+  REDIS_KEY_PREFIX = Resque::Plugins::Uniqueness::Base::REDIS_KEY_PREFIX
 
   def queueing_locked_items
     locked_items.fetch(:queueing, [])

@@ -42,7 +42,7 @@ module Resque
             # will run after hooks, but its unexpected behavior.
             Resque::Job.new(item[:queue], 'class' => item[:class], 'args' => item[:args])
                        .uniqueness
-                       .try_lock_queueing
+                       .try_lock_queueing(timestamp.to_i - Time.now.to_i)
             super
           end
         end

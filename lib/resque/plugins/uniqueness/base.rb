@@ -7,6 +7,21 @@ module Resque
 
       # Base class for Lock instance
       class Base
+        REDIS_KEY_PREFIX = 'resque_uniqueness'
+
+        class << self
+          # Key to store active locks
+          def locks_storage_redis_key
+            return unless defined? self::PREFIX
+
+            @locks_storage_redis_key ||= [
+              REDIS_KEY_PREFIX,
+              self::PREFIX,
+              'all_locks'
+            ].join(':')
+          end
+        end
+
         def initialize(job)
           @job = job
         end
@@ -27,12 +42,12 @@ module Resque
           lock_perform if should_lock_on_perform?
         end
 
-        def ensure_unlock_perform
-          unlock_perform if perform_locked?
+        def try_lock_queueing(seconds_to_enqueue = 0)
+          lock_queueing(seconds_to_enqueue) if should_lock_on_queueing?
         end
 
-        def try_lock_queueing
-          lock_queueing if should_lock_on_queueing?
+        def ensure_unlock_perform
+          unlock_perform if perform_locked?
         end
 
         def ensure_unlock_queueing
@@ -49,6 +64,14 @@ module Resque
           try_lock_perform
         rescue LockingError
           nil
+        end
+
+        def redis_key
+          @redis_key ||= [
+            self.class::PREFIX,
+            REDIS_KEY_PREFIX,
+            job.to_uniquness_item
+          ].join(':')
         end
 
         private
@@ -71,7 +94,7 @@ module Resque
           raise NotImplementedError
         end
 
-        def lock_queueing
+        def lock_queueing(_)
           raise NotImplementedError
         end
 
@@ -79,8 +102,31 @@ module Resque
           raise NotImplementedError
         end
 
-        def redis_key
-          "#{self.class::PREFIX}:#{REDIS_KEY_PREFIX}:#{Resque.encode(class: job.payload_class.uniqueness_key, args: job.payload_class.unique_args(*job.args))}"
+        def set_lock
+          value_before, = redis.multi {
+            redis.getset(redis_key, job.to_encoded_item_with_queue)
+            remember_lock
+          }
+          value_before
+        end
+
+        def remove_lock
+          redis.multi do
+            redis.del(redis_key)
+            forget_lock
+          end
+        end
+
+        def remember_lock
+          redis.sadd(self.class.locks_storage_redis_key, redis_key)
+        end
+
+        def forget_lock
+          redis.srem(self.class.locks_storage_redis_key, redis_key)
+        end
+
+        def lock_present?
+          redis.exists?(redis_key)
         end
 
         def log(message)
