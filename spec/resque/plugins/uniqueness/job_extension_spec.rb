@@ -8,7 +8,8 @@ RSpec.describe Resque::Plugins::Uniqueness::JobExtension do
   let(:queue) { klass.instance_variable_get(:@queue) }
   let(:klass) {}
   let(:args) { [] }
-  let(:uniqueness) { Resque::Job.new(queue, 'class' => klass, 'args' => args).uniqueness }
+  let(:job) { Resque::Job.new(queue, 'class' => klass, 'args' => args) }
+  let(:uniqueness) { job.uniqueness }
 
   describe '.create' do
     subject { Resque::Job.create(queue, klass, *args) }
@@ -143,7 +144,6 @@ RSpec.describe Resque::Plugins::Uniqueness::JobExtension do
   end
 
   describe 'instance methods' do
-    let(:job) { Resque::Job.new(queue, 'class' => klass, 'args' => args) }
     let(:klass) { UntilExecutingWorker }
 
     describe '#ensure_enqueue' do
@@ -221,6 +221,30 @@ RSpec.describe Resque::Plugins::Uniqueness::JobExtension do
         encoded_payload = Resque.encode(class: job.payload_class.to_s, args: job.args, queue: queue)
         Resque.redis.scard("timestamps:#{encoded_payload}")
       end
+    end
+
+    describe '#to_encoded_item_with_queue' do
+      subject { job.to_encoded_item_with_queue }
+
+      let(:klass) { UntilExecutingWorker }
+
+      it { is_expected.to eq({class: klass, args: args, queue: queue}.to_json) }
+    end
+
+    describe '#to_encoded_item' do
+      subject { job.to_encoded_item }
+
+      let(:klass) { UntilExecutingWorker }
+
+      it { is_expected.to eq({class: klass, args: args}.to_json) }
+    end
+
+    describe '#to_uniquness_item' do
+      subject { job.to_uniquness_item }
+
+      let(:klass) { UntilExecutingWorker }
+
+      it { is_expected.to eq({class: klass, args: args}.to_json) }
     end
   end
 end

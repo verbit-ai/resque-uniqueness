@@ -14,11 +14,11 @@ module Resque
       class WhileExecuting < Base
         PREFIX = 'performing'
         # We should to expiring while_executing lock to prevent unexpected terminated
-        LOCK_EXPIRE_SECONDS = 1.minute.to_i
+        LOCK_EXPIRE_SECONDS = 60
         LOCK_RENEWAL_WAIT_SECONDS = 5
 
         def perform_locked?
-          should_lock_on_perform? && already_performing?
+          should_lock_on_perform? && lock_present?
         end
 
         private
@@ -28,7 +28,7 @@ module Resque
         end
 
         def lock_perform
-          value_before = redis.getset(redis_key, 1)
+          value_before = set_lock
           log('Performing locked')
 
           # If value before is postive, than lock already present
@@ -41,12 +41,8 @@ module Resque
         end
 
         def unlock_perform
-          redis.del(redis_key)
+          remove_lock
           log('Performing unlocked')
-        end
-
-        def already_performing?
-          redis.get(redis_key).to_i.positive?
         end
 
         # When server was unexpected terminated all our locks will still be enabled on the redis.
@@ -54,7 +50,7 @@ module Resque
         # instances could work with one redis server.
         def run_lock_renewal
           Thread.new do
-            while already_performing?
+            while lock_present?
               redis.expire(redis_key, LOCK_EXPIRE_SECONDS)
               sleep LOCK_RENEWAL_WAIT_SECONDS
             end

@@ -23,9 +23,28 @@ RSpec.describe Resque::Plugins::Uniqueness::UntilExecuting do
   describe '#try_lock_queueing' do
     subject(:call) { lock_instance.try_lock_queueing }
 
-    it 'increment data in redis' do
-      call
-      expect(Resque.redis.get(redis_key)).to eq '1'
+    its_block {
+      is_expected.to change { Resque.redis.get(redis_key) }
+        .from(nil)
+        .to(job.to_encoded_item_with_queue)
+    }
+    its_block {
+      is_expected.to change { Resque.redis.ttl(redis_key) }
+        .to(be_within(2).of(described_class::EXPIRING_TIME))
+    }
+
+    context 'when seconds t enqueue present' do
+      subject(:call) { lock_instance.try_lock_queueing(20_000) }
+
+      its_block {
+        is_expected.to change { Resque.redis.get(redis_key) }
+          .from(nil)
+          .to(job.to_encoded_item_with_queue)
+      }
+      its_block {
+        is_expected.to change { Resque.redis.ttl(redis_key) }
+          .to(be_within(2).of(described_class::EXPIRING_TIME + 20_000))
+      }
     end
 
     context 'when already locked' do
