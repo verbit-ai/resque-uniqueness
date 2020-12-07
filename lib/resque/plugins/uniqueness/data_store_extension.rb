@@ -6,7 +6,7 @@ module Resque
       # Extension for Resque::DataStore class
       module DataStoreExtension
         def exists?(key)
-          if @redis.respond_to?(:exists?)
+          if Redis.current.respond_to?(:exists?)
             # Supporting new redis version.
             @redis.exists?(key)
           else
