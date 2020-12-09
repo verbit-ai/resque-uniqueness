@@ -11,7 +11,7 @@ module Resque
       #   end
       class UntilExecuting < Base
         PREFIX = 'queueing'
-        EXPIRING_TIME = 172_800 # 2 days
+        EXPIRING_TIME = 172_800 # 2 days in seconds
 
         def queueing_locked?
           should_lock_on_queueing? && lock_present?
@@ -24,10 +24,9 @@ module Resque
         end
 
         def lock_queueing(seconds_to_enqueue = 0)
-          value_before = set_lock
           # Expire queueing lock after two days. If lock installing for scheduled job - should
           # add seconds which scheduler should wait before push this job to queue.
-          redis.expire(redis_key, seconds_to_enqueue + EXPIRING_TIME)
+          value_before = set_lock(seconds_to_enqueue + EXPIRING_TIME)
           log('Queueing locked')
 
           # If value before is postive, than lock already present

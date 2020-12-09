@@ -28,7 +28,7 @@ module Resque
         end
 
         def lock_perform
-          value_before = set_lock
+          value_before = set_lock(LOCK_EXPIRE_SECONDS)
           log('Performing locked')
 
           # If value before is postive, than lock already present

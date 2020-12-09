@@ -102,9 +102,10 @@ module Resque
           raise NotImplementedError
         end
 
-        def set_lock
+        def set_lock(seconds_to_expire) # rubocop:disable Naming/AccessorMethodName
           value_before, = redis.multi {
             redis.getset(redis_key, job.to_encoded_item_with_queue)
+            redis.expire(redis_key, seconds_to_expire)
             remember_lock
           }
           value_before
