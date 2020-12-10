@@ -16,7 +16,13 @@ RSpec.shared_context 'when acceptance spec' do
   end
 
   def workers_waiter(*extra_keys)
-    sleep 0.5 while (0..6).any? { have_working_jobs?(*extra_keys) && sleep(0.5) }
+    while (0..6).any? { have_working_jobs?(*extra_keys) && sleep(0.5) }
+      if block_given?
+        yield
+      else
+        sleep(0.5)
+      end
+    end
   end
 
   def have_working_jobs?(*extra_keys)

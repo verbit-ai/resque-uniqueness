@@ -13,7 +13,7 @@ module Resque
         # end.
         def with_unreleased_queueing_lock
           (
-            (locked_items_for(UntilExecuting) - queued_items - scheduled_items) \
+            (locked_items_for(UntilExecuting) - scheduled_items - queued_items) \
             & locked_items_for(UntilExecuting)
           ).map(&method(:item_to_job))
         end
@@ -50,6 +50,19 @@ module Resque
 
         # Item is a hash which has a structure:
         #   {'queue' => <queue_name>, 'class' => <worker_class>, 'args' => [<list of args>]}
+        def scheduled_items
+          timestamps = redis.zrevrange(:delayed_queue_schedule, 0, -1)
+          items = []
+
+          timestamps.each_slice(1000) do |timestamps_part|
+            items.push(*scheduled_items_at(timestamps_part))
+            logger.info "Already processing items: #{items.count}"
+          end
+          items.map(&Resque.method(:decode))
+        end
+
+        # Item is a hash which has a structure:
+        #   {'queue' => <queue_name>, 'class' => <worker_class>, 'args' => [<list of args>]}
         def queued_items
           active_queues = redis.smembers(:queues)
 
@@ -64,22 +77,9 @@ module Resque
 
         # Item is a hash which has a structure:
         #   {'queue' => <queue_name>, 'class' => <worker_class>, 'args' => [<list of args>]}
-        def scheduled_items
-          timestamps = redis.zrevrange(:delayed_queue_schedule, 0, -1)
-          items = []
-
-          timestamps.each_slice(1000) do |timestamps_part|
-            items.push(*scheduled_items_at(timestamps_part))
-            logger.info "Already processing items: #{items.count}"
-          end
-          items.map(&Resque.method(:decode))
-        end
-
-        # Item is a hash which has a structure:
-        #   {'queue' => <queue_name>, 'class' => <worker_class>, 'args' => [<list of args>]}
         def locked_items_for(lock_class)
           redis.smembers(lock_class.locks_storage_redis_key)
-               .then { |redis_keys| redis.mget(*redis_keys) }
+               .then { |redis_keys| redis_keys.empty? ? [] : redis.mget(*redis_keys) }
                .compact
                .map(&Resque.method(:decode))
         end
@@ -117,13 +117,7 @@ module Resque
         # Needs to customize timeout for large redis data. In other case - for large data when
         # trying to take at least "scheduled_items" redis raise Redis::TimeoutError
         def redis
-          @redis ||= Resque.redis
-          # Resque::DataStore.new(
-          #   Redis::Namespace.new(
-          #     Resque.redis.namespace,
-          #     redis: Redis.new(**Resque.redis._client.options, timeout: 20)
-          #   )
-          # )
+          Resque.redis
         end
       end
     end

@@ -28,5 +28,20 @@ namespace :resque do
 
       threads.each(&:join) while threads.map(&:status).uniq != [false]
     end
+
+    desc 'Start multiple Resque schedulers. Should only be used in test mode.'
+    task :scheduler do
+      threads = []
+
+      abort 'set COUNT env var, e.g. $ COUNT=2 rake resque:specs:scheduler' if ENV['COUNT'].to_i < 1
+
+      ENV['COUNT'].to_i.times do
+        threads << Thread.new do
+          system 'rake resque:scheduler'
+        end
+      end
+
+      threads.each(&:join)
+    end
   end
 end
