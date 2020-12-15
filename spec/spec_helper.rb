@@ -1,14 +1,13 @@
 # frozen_string_literal: true
 
 require 'bundler/setup'
-require 'rspec'
-require 'saharspec'
-require 'rspec/its'
-require 'timecop'
+Bundler.require(:test)
+
 require 'resque/plugins/uniqueness'
 
 Resque.redis = 'localhost:6379/resque_uniqueness_test_isolated'
 Resque.logger.level = :error
+Resque::Scheduler.logger = Resque.logger
 
 require_relative 'fixtures/test_workers'
 require_relative 'acceptance/shared'
