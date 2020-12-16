@@ -142,3 +142,22 @@ class JobsExtractorAcceptanceWorker < TestWorker
     }
   end
 end
+
+class RetryAcceptanceWorker < TestWorker
+  include Resque::Plugins::Retry
+
+  @retry_limit = 5
+  @queue = :test_job
+
+  def self.perform(uuid)
+    key = "worker_data:#{uuid}"
+    super {
+      case rand(0..100)
+      when 0..50
+        raise 'test error'
+      when 50..100
+        Resque.redis.incr(key) < 5 ? Resque.enqueue_in(rand(1..5), self, uuid) : Resque.redis.del(key)
+      end
+    }
+  end
+end
