@@ -126,3 +126,19 @@ class UntilExecutingRecoverWorker < UntilExecutingWorker
     super { sleep rand(0.1..3) }
   end
 end
+
+class JobsExtractorAcceptanceWorker < TestWorker
+  @lock_type = :until_executing
+  @queue = :test_job
+
+  def self.perform(uuid)
+    key = "worker_data:#{uuid}"
+    super {
+      if Resque.redis.incr(key) < 5
+        Resque.enqueue_in(rand(1..5), self, uuid)
+      else
+        Resque.redis.del(key)
+      end
+    }
+  end
+end
