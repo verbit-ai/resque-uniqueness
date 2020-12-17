@@ -72,6 +72,7 @@ module Resque
           Resque::Worker
             .working
             .map(&:job)
+            .reject(&:empty?)
             .map { |item| item['payload'].merge(item.slice('queue')) }
         end
 
