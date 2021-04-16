@@ -32,7 +32,7 @@ module Resque
           log('Performing locked')
 
           # If value before is postive, than lock already present
-          if value_before.to_i.positive?
+          if value_before
             log('Performing locking error')
             raise LockingError, 'Job is already locked on perform'
           end
