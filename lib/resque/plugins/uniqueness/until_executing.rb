@@ -30,7 +30,7 @@ module Resque
           log('Queueing locked')
 
           # If value before is postive, than lock already present
-          return unless value_before.to_i.positive?
+          return unless value_before
 
           log('Queueing locking error')
           raise LockingError, 'Job is already locked on queueing'

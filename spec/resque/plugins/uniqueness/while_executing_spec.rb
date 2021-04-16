@@ -11,9 +11,9 @@ RSpec.describe Resque::Plugins::Uniqueness::WhileExecuting do
 
     context 'when already performing' do
       around do |example|
-        Resque.redis.incr(redis_key)
+        lock
         example.run
-        Resque.redis.del(redis_key)
+        unlock
       end
 
       it { is_expected.to be true }
@@ -35,9 +35,9 @@ RSpec.describe Resque::Plugins::Uniqueness::WhileExecuting do
 
     context 'when already locked' do
       around do |example|
-        Resque.redis.incr(redis_key)
+        lock
         example.run
-        Resque.redis.del(redis_key)
+        unlock
       end
 
       its_block do
@@ -53,9 +53,9 @@ RSpec.describe Resque::Plugins::Uniqueness::WhileExecuting do
 
     context 'when locked' do
       around do |example|
-        Resque.redis.incr(redis_key)
+        lock
         example.run
-        Resque.redis.del(redis_key)
+        unlock
       end
 
       it 'remove redis key' do
@@ -82,9 +82,17 @@ RSpec.describe Resque::Plugins::Uniqueness::WhileExecuting do
 
     # None lock type doesn not have any locks for queueing. So, error will not be raised
     context 'when already locked' do
-      before { Resque.redis.incr(redis_key) }
+      before { lock }
 
       its_block { is_expected.not_to raise_error }
     end
+  end
+
+  def lock
+    lock_instance.send(:set_lock, described_class::LOCK_EXPIRE_SECONDS)
+  end
+
+  def unlock
+    lock_instance.send(:remove_lock)
   end
 end

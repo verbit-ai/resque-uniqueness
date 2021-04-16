@@ -10,7 +10,7 @@ RSpec.describe Resque::Plugins::Uniqueness::UntilExecuting do
     subject { lock_instance.queueing_locked? }
 
     context 'when already queueing' do
-      before { Resque.redis.incr(redis_key) }
+      before { lock }
 
       it { is_expected.to be true }
     end
@@ -48,7 +48,7 @@ RSpec.describe Resque::Plugins::Uniqueness::UntilExecuting do
     end
 
     context 'when already locked' do
-      before { Resque.redis.incr(redis_key) }
+      before { lock }
 
       its_block {
         is_expected.to raise_error(Resque::Plugins::Uniqueness::LockingError, /already locked/)
@@ -62,7 +62,7 @@ RSpec.describe Resque::Plugins::Uniqueness::UntilExecuting do
     its_block { is_expected.not_to send_message(lock_instance.redis, :del) }
 
     context 'when locked' do
-      before { Resque.redis.incr(redis_key) }
+      before { lock }
 
       it 'remove redis key' do
         call
@@ -88,9 +88,17 @@ RSpec.describe Resque::Plugins::Uniqueness::UntilExecuting do
 
     # None lock type doesn not have any locks for queueing. So, error will not be raised
     context 'when already locked' do
-      before { Resque.redis.incr(redis_key) }
+      before { lock }
 
       its_block { is_expected.not_to raise_error }
     end
+  end
+
+  def lock
+    lock_instance.send(:set_lock, described_class::EXPIRING_TIME)
+  end
+
+  def unlock
+    lock_instance.send(:remove_lock)
   end
 end
