@@ -90,6 +90,47 @@ RSpec.describe Resque::Plugins::Uniqueness::JobExtension do
     end
   end
 
+  describe 'LockingError' do
+    let(:lock_class) { Resque::Plugins::Uniqueness::UntilAndWhileExecuting }
+    let(:queue) { :test_queue }
+    let(:klass) { UntilAndWhileExecutingWorker }
+
+    include_context 'with lock', :queueing_locked, :try_lock_queueing
+
+    before do
+      allow(lock_instance).to receive(:try_lock_queueing)
+        .and_raise(Resque::Plugins::Uniqueness::LockingError)
+      allow(lock_instance).to receive(:ensure_unlock_queueing)
+      allow(lock_instance).to receive(:try_lock_perform)
+        .and_raise(Resque::Plugins::Uniqueness::LockingError)
+    end
+
+    describe 'Resque::Job.create' do
+      subject { Resque::Job.create(queue, klass, *args) }
+
+      its_block { is_expected.not_to raise_error }
+    end
+
+    describe 'Resque.enqueue_to' do
+      subject { Resque.enqueue_to(queue, klass, *args) }
+
+      its_block { is_expected.not_to raise_error }
+    end
+
+    describe 'Resque::Job.reserve' do
+      subject { Resque::Job.reserve(queue) }
+
+      let(:job) { Resque::Job.new(queue, job_payload) }
+      let(:job_payload) { {'class' => UntilAndWhileExecutingWorker, 'args' => args} }
+
+      before do
+        allow(Resque::Plugins::Uniqueness).to receive(:pop_perform_unlocked).and_return(job)
+      end
+
+      its_block { is_expected.not_to raise_error }
+    end
+  end
+
   describe '.reserve' do
     subject { Resque::Job.reserve(queue) }
 
