@@ -92,6 +92,15 @@ module Resque
               !Resque::Plugins::Uniqueness.enabled_for?(klass) ||
               klass.call_from_scheduler? # klass will contain this method if plugin enabled
           end
+
+          # For now only `Resque.enqueue_to` can and should handle LockingError exception.
+          # In case when we don't handle it there - we will run after hooks for job, which don't
+          # queued
+          # We handle this exception in Resque::Plugins::Uniqueness::ResqueExtension.enqueue_to
+          # method
+          def parent_handle_locking_error?(error)
+            error.backtrace.any? { |trace| trace =~ /resque\.rb.*`enqueue_to/ }
+          end
         end
 
         # This operation ensure that queueing is locked and job placed into queue (or, if it
@@ -136,14 +145,6 @@ module Resque
           Resque.redis
                 .everything_in_queue(queue)
                 .include?(to_encoded_item)
-        end
-
-        # For now only `Resque.enqueue_to` can and should handle LockingError exception.
-        # In case when we don't handle it there - we will run after hooks for job,
-        # which don't queued
-        # We handle this exception in Resque::Plugins::Uniqueness::ResqueExtension.enqueue_to method
-        def parent_handle_locking_error?(error)
-          error.backtrace.any? { |trace| trace =~ /resque\.rb.*`enqueue_to/ }
         end
       end
     end
