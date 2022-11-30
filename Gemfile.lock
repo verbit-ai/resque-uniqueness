@@ -35,7 +35,7 @@ GEM
       method_source (~> 1.0)
     raabro (1.4.0)
     rack (2.2.4)
-    rack-protection (3.0.2)
+    rack-protection (3.0.4)
       rack
     rainbow (3.0.0)
     rake (12.3.3)
@@ -95,10 +95,10 @@ GEM
       fugit (~> 1.1, >= 1.1.6)
     saharspec (0.0.7)
       ruby2_keywords
-    sinatra (3.0.2)
+    sinatra (3.0.4)
       mustermann (~> 3.0)
       rack (~> 2.2, >= 2.2.4)
-      rack-protection (= 3.0.2)
+      rack-protection (= 3.0.4)
       tilt (~> 2.0)
     tilt (2.0.11)
     timecop (0.9.1)
