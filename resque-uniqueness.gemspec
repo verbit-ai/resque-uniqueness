@@ -36,7 +36,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'redis-namespace', '~> 1.9'
-  spec.add_dependency 'resque', '~> 2.3.0'
+  spec.add_dependency 'resque', '>= 2.4.0'
   spec.add_dependency 'resque-scheduler', '~> 4.7'
 
   spec.add_development_dependency 'bundler', '~> 2.0'
