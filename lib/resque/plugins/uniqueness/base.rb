@@ -8,6 +8,7 @@ module Resque
       # Base class for Lock instance
       class Base
         REDIS_KEY_PREFIX = 'resque_uniqueness'
+        REDIS_LOCK_RETRIES = 5
 
         class << self
           # Key to store active locks
@@ -103,13 +104,27 @@ module Resque
         end
 
         def set_lock(seconds_to_expire) # rubocop:disable Naming/AccessorMethodName
+          retry_count = 0
+          begin
+            lock_for(seconds_to_expire)
+          rescue error
+            retry_count += 1
+            retry_count < REDIS_LOCK_RETRIES ? retry : log(error.message)
+          end
+        end
+
+        def lock_for(seconds_to_expire)
           result = redis.multi {
             redis.getset(redis_key, job.to_encoded_item_with_queue)
             redis.expire(redis_key, seconds_to_expire)
             remember_lock
           }
           value_before, _ = result
-          Resque.logger.info("set_lock failed: #{result}") if result.count < 3
+          if result.count < 3
+            message = "set_lock failed: #{redis_key}:#{job.to_encoded_item_with_queue}"
+            Resque.logger.info("#{message}: #{result}")
+            raise(message)
+          end
           value_before
         end
 
