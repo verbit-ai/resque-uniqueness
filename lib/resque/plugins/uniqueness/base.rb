@@ -120,11 +120,8 @@ module Resque
             remember_lock
           }
           value_before, _ = result
-          if result.count < 3
-            message = "set_lock failed: #{redis_key}:#{job.to_encoded_item_with_queue}"
-            Resque.logger.info("#{message}: #{result}")
-            raise(message)
-          end
+          raise("set_lock failed: #{redis_key}:#{job.to_encoded_item_with_queue}") if result.count < 3
+
           value_before
         end
 
