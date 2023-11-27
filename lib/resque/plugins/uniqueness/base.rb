@@ -124,10 +124,10 @@ module Resque
         # @return [String, nil] The result of prev lock, or nil if the worker was not scheduled before.
         # @raise [RedisMultiError] Raised if the multi "transaction" does not succeed.
         def lock_for(seconds_to_expire)
-          result = redis.multi {
-            redis.getset(redis_key, job.to_encoded_item_with_queue)
-            redis.expire(redis_key, seconds_to_expire)
-            remember_lock
+          result = redis.multi { |multi|
+            multi.getset(redis_key, job.to_encoded_item_with_queue)
+            multi.expire(redis_key, seconds_to_expire)
+            remember_lock(multi)
           }
           raise RedisMultiError if result.count < 3
 
@@ -135,18 +135,18 @@ module Resque
         end
 
         def remove_lock
-          redis.multi do
-            redis.del(redis_key)
-            forget_lock
+          redis.multi do |multi|
+            multi.del(redis_key)
+            forget_lock(multi)
           end
         end
 
-        def remember_lock
-          redis.sadd(self.class.locks_storage_redis_key, redis_key)
+        def remember_lock(redis_client = redis)
+          redis_client.sadd(self.class.locks_storage_redis_key, redis_key)
         end
 
-        def forget_lock
-          redis.srem(self.class.locks_storage_redis_key, redis_key)
+        def forget_lock(redis_client = redis)
+          redis_client.srem(self.class.locks_storage_redis_key, redis_key)
         end
 
         def lock_present?
