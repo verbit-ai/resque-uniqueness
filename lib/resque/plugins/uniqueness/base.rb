@@ -4,6 +4,7 @@ module Resque
   module Plugins
     module Uniqueness
       class LockingError < StandardError; end
+      class RedisMultiError < StandardError; end
 
       # Base class for Lock instance
       class Base
@@ -107,22 +108,30 @@ module Resque
           retry_count = 0
           begin
             lock_for(seconds_to_expire)
-          rescue error
+          rescue RedisMultiError
+            # If redis.multi failed to execute all calls, then we should retry
+            # it's not clear is it related to redis or redis-client gem or network issue
+            # quick tests showed only 1 retry
             retry_count += 1
-            retry_count < REDIS_LOCK_RETRIES ? retry : log(error.message)
+            log("set_lock redis calls failed, #{retry_count} retry of #{REDIS_LOCK_RETRIES}")
+            retry if retry_count <= REDIS_LOCK_RETRIES
           end
         end
 
+        # Locks the job for a specified duration in Redis.
+        #
+        # @param seconds_to_expire [Integer] The duration for which the lock should be held.
+        # @return [String, nil] The result of prev lock, or nil if the worker was not scheduled before.
+        # @raise [RedisMultiError] Raised if the multi "transaction" does not succeed.
         def lock_for(seconds_to_expire)
           result = redis.multi {
             redis.getset(redis_key, job.to_encoded_item_with_queue)
             redis.expire(redis_key, seconds_to_expire)
             remember_lock
           }
-          value_before, _ = result
-          raise("set_lock failed: #{redis_key}:#{job.to_encoded_item_with_queue}") if result.count < 3
+          raise RedisMultiError if result.count < 3
 
-          value_before
+          result.first
         end
 
         def remove_lock
