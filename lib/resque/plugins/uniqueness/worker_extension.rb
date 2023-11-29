@@ -10,9 +10,9 @@ module Resque
         def working_on(job)
           return super(job) unless RecoveringQueue.in_allowed_queues?(job.queue)
 
-          Resque.redis.multi do
+          Resque.redis.multi do |multi|
             super(job)
-            RecoveringQueue.remove(job.queue, job.payload)
+            RecoveringQueue.remove(job.queue, job.payload, multi)
           end
         end
       end
