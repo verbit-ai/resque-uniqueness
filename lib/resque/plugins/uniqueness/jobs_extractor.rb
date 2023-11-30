@@ -80,8 +80,8 @@ module Resque
           return [] if locked_items.empty?
 
           locked_items.zip(
-            redis.multi {
-              locked_items.each { |item| redis.exists?("timestamps:#{Resque.encode(item)}") }
+            redis.multi { |multi|
+              locked_items.each { |item| multi.exists?("timestamps:#{Resque.encode(item)}") }
             }
           ).to_h.reject { |_, is_scheduled| is_scheduled }.keys
         end
@@ -90,10 +90,10 @@ module Resque
           return [] if locked_items.empty?
 
           locked_items.zip(
-            redis.multi {
+            redis.multi { |multi|
               locked_items.each { |item|
                 job = Resque::Job.new(item['queue'], item.slice('class', 'args'))
-                redis.exists?("queueing:resque_uniqueness:#{job.to_uniquness_item}")
+                multi.exists?("queueing:resque_uniqueness:#{job.to_uniquness_item}")
               }
             }
           ).to_h.select { |_, is_exist| is_exist }.keys
@@ -105,6 +105,7 @@ module Resque
           active_queues = redis.smembers(:queues)
 
           active_queues
+            # NOTE: everything_in_queue is resque method, cannot pass redis multi to it
             .zip(redis.multi { active_queues.each(&redis.method(:everything_in_queue)) })
             .to_h
             .flat_map { |queue, items|
@@ -139,8 +140,8 @@ module Resque
         end
 
         def scheduled_items_at(timestamps)
-          redis.multi {
-            timestamps.each { |timestamp| redis.lrange("delayed:#{timestamp}", 0, -1) }
+          redis.multi { |multi|
+            timestamps.each { |timestamp| multi.lrange("delayed:#{timestamp}", 0, -1) }
           }.flatten.compact
         end
 

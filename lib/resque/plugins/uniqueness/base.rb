@@ -4,10 +4,12 @@ module Resque
   module Plugins
     module Uniqueness
       class LockingError < StandardError; end
+      class RedisMultiError < StandardError; end
 
       # Base class for Lock instance
       class Base
         REDIS_KEY_PREFIX = 'resque_uniqueness'
+        REDIS_LOCK_RETRIES = 5
 
         class << self
           # Key to store active locks
@@ -103,27 +105,48 @@ module Resque
         end
 
         def set_lock(seconds_to_expire) # rubocop:disable Naming/AccessorMethodName
-          value_before, = redis.multi {
-            redis.getset(redis_key, job.to_encoded_item_with_queue)
-            redis.expire(redis_key, seconds_to_expire)
-            remember_lock
-          }
-          value_before
-        end
-
-        def remove_lock
-          redis.multi do
-            redis.del(redis_key)
-            forget_lock
+          retry_count = 0
+          begin
+            lock_for(seconds_to_expire)
+          rescue RedisMultiError
+            # If redis.multi failed to execute all calls, then we should retry
+            # it's not clear is it related to redis or redis-client gem or network issue
+            # quick tests showed only 1 retry
+            retry_count += 1
+            log("set_lock redis calls failed, #{retry_count} retry of #{REDIS_LOCK_RETRIES}")
+            retry if retry_count <= REDIS_LOCK_RETRIES
           end
         end
 
-        def remember_lock
-          redis.sadd(self.class.locks_storage_redis_key, redis_key)
+        # Locks the job for a specified duration in Redis.
+        #
+        # @param seconds_to_expire [Integer] The duration for which the lock should be held.
+        # @return [String, nil] The result of prev lock, or nil if the worker was not scheduled before.
+        # @raise [RedisMultiError] Raised if the multi "transaction" does not succeed.
+        def lock_for(seconds_to_expire)
+          result = redis.multi { |multi|
+            multi.getset(redis_key, job.to_encoded_item_with_queue)
+            multi.expire(redis_key, seconds_to_expire)
+            remember_lock(multi)
+          }
+          raise RedisMultiError if result.count < 3
+
+          result.first
         end
 
-        def forget_lock
-          redis.srem(self.class.locks_storage_redis_key, redis_key)
+        def remove_lock
+          redis.multi do |multi|
+            multi.del(redis_key)
+            forget_lock(multi)
+          end
+        end
+
+        def remember_lock(redis_client = redis)
+          redis_client.sadd(self.class.locks_storage_redis_key, redis_key)
+        end
+
+        def forget_lock(redis_client = redis)
+          redis_client.srem(self.class.locks_storage_redis_key, redis_key)
         end
 
         def lock_present?

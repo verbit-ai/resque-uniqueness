@@ -48,13 +48,13 @@ module Resque
 
         # Removed when job placed into the worker redis key, or placed back to queue, or removed
         # from queue manually.
-        def remove(queue, item)
+        def remove(queue, item, redis_client = Resque.redis)
           # If this key missed - job not in the recovering queue
           return unless item.transform_keys(&:to_sym).key?(UUID_KEY)
 
           Resque.logger.info('Removing item from the recovering queue. ' \
                              "Queue: #{queue}. Item: #{item}")
-          Resque.redis.zrem(REDIS_KEY % {queue: queue}, Resque.encode(item))
+          redis_client.zrem(REDIS_KEY % {queue: queue}, Resque.encode(item))
           item.delete(UUID_KEY) || item.delete(UUID_KEY.to_s)
         end
 
@@ -85,9 +85,9 @@ module Resque
 
         def pop_broken_jobs(queue)
           args = [REDIS_KEY % {queue: queue}, '-inf', Time.now.to_i - ALLOWED_DELAY]
-          Resque.redis.multi {
-            Resque.redis.zrangebyscore(*args)
-            Resque.redis.zremrangebyscore(*args)
+          Resque.redis.multi { |multi|
+            multi.zrangebyscore(*args)
+            multi.zremrangebyscore(*args)
           }.first.map(&Resque.method(:decode))
         end
 
