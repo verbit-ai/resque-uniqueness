@@ -29,12 +29,12 @@ RSpec.describe 'Resque jobs recover', type: :acceptance do
         sleep rand(0.001..2)
         while example_working
           # Take not working worker pid
-          worker_pid = `ps -aux | grep resque-`.split("\n")
-                                               .grep(/Waiting for test_job_recovering/)
-                                               .sample
-                                               &.split
-                                               &.fetch(1)
-                                               &.to_i
+          worker_pid = `ps aux | grep resque-`.split("\n")
+                                             .grep(/Waiting for test_job_recovering/)
+                                             .sample
+                                             &.split
+                                             &.fetch(1)
+                                             &.to_i
           next unless worker_pid
 
           Resque.logger.info "Going to kill worker with pid: #{worker_pid}"
