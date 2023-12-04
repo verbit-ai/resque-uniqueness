@@ -144,7 +144,7 @@ You should to run resque workers:
 
 and also resque scheduler:
 
-`bundle exec rake resque:scheduler`
+`bundle exec resque:scheduler`
 
 And after it:
 
