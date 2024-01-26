@@ -26,7 +26,7 @@ The goal of this gem is to ensure your Resque jobs are unique. We do this by cre
 
 ## Requirements
 
-- Resque `~> 2.0.0`
+- Resque `~> 2.6.0`
 - Ruby `>= 2.3`
 
 ## Installation
@@ -144,11 +144,15 @@ You should to run resque workers:
 
 and also resque scheduler:
 
-`bundle exec resque:scheduler`
+`bundle exec rake resque:scheduler`
 
 And after it:
 
 `bundle exec rake spec`
+
+Note, you might also need to run:
+
+`redis-server --port 6378`
 
 ## Contributing
 
