@@ -5,7 +5,7 @@ module ResqueWorkerHelper
   def worker_processing_jobs
     Resque::Worker.working.map(&:job).map { |job|
       job.transform_keys(&:to_sym)
-         .then { |payload:, **item| {**item, payload: payload.transform_keys(&:to_sym)} }
+         .then { |item| item.merge(payload: item[:payload].transform_keys(&:to_sym)) }
     }
   end
 end
